@@ -9,6 +9,7 @@
 #include <cmath>
 #include <fstream>
 #include <filesystem>
+#include "Exceptions.hpp"
 
 template <class Key, class Data>
 class BpTree {
@@ -226,6 +227,11 @@ private:
       return Pair(false, ValueType());
     }
   }
+  
+  Pair<bool, ValueType> DeleteNode() { // Delete a value from the B+ tree
+    
+    return Pair(false, ValueType());
+  }
 
 public:
 
@@ -253,13 +259,16 @@ public:
     file_.close();
   }
 
-  bool Insert(Key key, Data data) { // A function for client to use
-    return InsertNode(ValueType(key, data), nullptr, root_position_).first;
+  void Insert(Key key, Data data) { // A function for client to use
+    try {
+      InsertNode(ValueType(key, data), nullptr, root_position_).first;
+    } catch (Exception *error) {
+      throw error;
+    }
   }
-  
-  Pair<bool, ValueType> Delete() { // Delete a value from the B+ tree
-    
-    return Pair(false, ValueType());
+
+  bool Delete() {
+    return true;
   }
 
   void Find(Key key) { // Find those value whose key equals to key that input by users
