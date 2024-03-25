@@ -116,7 +116,7 @@ private:
   }
 
   template <class Type>
-  inline int write(Type &data, int position, std::ios_base::seekdir mode = std::ios::beg) { // Simple write funtion
+  inline int write(Type data, int position, std::ios_base::seekdir mode = std::ios::beg) { // Simple write funtion
     file_.seekp(position, mode);
     int tmp = int(file_.tellp());
     file_.write(reinterpret_cast<char *>(&data), sizeof(data));
@@ -156,17 +156,17 @@ private:
       new_p->last_position_ = p->last_position_ - (p->last_position_ / 2) - 1;
       new_p->son_[new_p->last_position_] = p->son_[p->last_position_];
       p->last_position_ /= 2;
-      int tmp_left = write(p, p->last_position_);
-      int tmp_right = write(new_p, 0, std::ios::end);
-      ret_value = p->value_[p->last_position_ + 1];
+      int tmp_right = p->son_[p->last_position_ + 1] = write(new_p, 0, std::ios::end);
+      int tmp_left = write(p, p_position);
+      ret_value = p->value_[p->last_position_];
       if (p == root_) { // if the Node to be split is the root Node, then we will have to add a new Node as new root
         root_ = new Node;
-        root_->value_[0] = p->value_[p->last_position_ + 1];
+        root_->value_[0] = p->value_[p->last_position_];
         root_->son_[0] = tmp_left;
         root_->son_[1] = tmp_right;
         root_->last_position_ = 1;
-        int new_root_tmp = write(root_, 0, std::ios::end);
-        write(new_root_tmp, 0);
+        root_position_ = write(root_, 0, std::ios::end);
+        write(root_position_, 0);
         delete p;
       }
     }
@@ -174,8 +174,8 @@ private:
     return ret_value;
   }
 
-  Pair<bool, ValueType> InsertNode(ValueType value, Node *p, int p_position = 0) { // Insert a value into the B+ tree (well I might have to write
-    if (p == nullptr) {                                                        // a funtion for client to use)
+  Pair<bool, ValueType> InsertNode(ValueType value, Node *p, int p_position = 0) { // Insert a value into the B+ tree (well I might have to
+    if (p == nullptr) {                                                            // write a funtion for client to use)
       p = root_;
     }
     int new_son = -1;
@@ -195,7 +195,7 @@ private:
         }
       }
       Pair<bool, ValueType> ret = InsertNode(value, next_p, next_p_position);
-      new_son = next_p->son_[next_p->last_position_];
+      new_son = next_p->is_leaf_ ? next_p->son_[next_p->last_position_] : next_p->son_[next_p->last_position_ + 1];
       delete next_p;
       if (!ret.first) {
         return ret;
@@ -227,10 +227,77 @@ private:
       return Pair(false, ValueType());
     }
   }
-  
-  Pair<bool, ValueType> DeleteNode() { // Delete a value from the B+ tree
-    
-    return Pair(false, ValueType());
+
+  // There are lots of points that need concerning
+  //p_relative_position stores the position of p in its
+  Pair<bool, ValueType> DeleteNode(ValueType value, Node *p_father, Node *p, int p_relative_position) { // Delete a value from the B+ tree
+    if (!p->is_leaf_) {
+      Node *next_p = new Node;
+      int next_p_position;
+      for (int i = 0; i <= p->last_position_; i++) {
+        if (i == p->last_position_) {
+          read(next_p, p->son_[p->last_position_]);
+          next_p_position = p->last_position_;
+        } else {
+          if (value < p->value_[i]) {
+            read(next_p, p->son_[i]);
+            next_p_position = i;
+            break;
+          }
+        }
+      }
+      DeleteNode(value, p, next_p, next_p_position);
+      delete next_p;
+    } else {
+      int delete_value_position = 0;
+      for (; delete_value_position < p->last_position_; delete_value_position++) {  // Find the value to be delete
+        if (!(p->value_[delete_value_position] < value)) {
+          break;
+        }
+      }
+      if (delete_value_position == p->last_position_) {
+        throw IllegalDelete();
+      }
+      if (p->last_position_ == SIZE_OF_BLOCK / 2) { // Devide circumstances into two condition
+        if (p_father == nullptr) { // If p is the root, then nothing have to be done
+          return Pair(false, ValueType());
+        }
+        if (p_relative_position != 0) { // If p has a previous brother
+          Node *bro = new Node;
+          int bro_position = read(bro, p_father->son[p_relative_position - 1]);
+          if (bro->last_position_ > SIZE_OF_BLOCK / 2) { // Check whether we can borrow a value from there
+            for (int i = delete_value_position; i > 0; i--) { // We have to rewrite the data so that the value from brother can be insert
+              p->value_[i] = p->value_[i - 1];
+              p->son_[i + 1] = p->son_[i];
+            }
+            p->value_[0] = bro->value_[bro->last_position_];
+            --bro->last_position_;
+            bro->son_[bro->last_position_] = bro->son_[bro->last_position_ + 1]; // Adjust the last node of brother
+            write(p, p_father->son_[p_relative_position]);
+            write(bro, bro_position);
+            delete bro;
+            return Pair(true, p->value[0]);
+          }
+        } else { // If p has no previous brother, then there must be a brother behind to it
+          Node *bro = new Node;
+          int bro_position = read(bro, p_father->son_[p_relative_position + 1]);
+          
+        }
+      } else {
+        for (int j = delete_value_position; j < p->last_position_ - 1; j++) {
+          p->value_[j] = p->value_[j + 1];
+          p->son_[j] = p->son_[j + 1];
+        }
+        p->son_[p->last_position_ - 1] = p->son_[p->last_position_];
+        --p->last_position_;
+        write(p, p_father->son_[p_relative_position]); // If there are enough value in the Node, then we can just erase it
+        if (delete_value_position == 0) {
+          return Pair(true, p->value_[0]);
+        } else {
+          return Pair(false, ValueType());
+        }
+      }
+    }
   }
 
 public:
