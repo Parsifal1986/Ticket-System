@@ -126,9 +126,9 @@ private:
   inline ValueType Split(Node *p, int p_position) { // Split a full block into two parts (the methods depends on whether the Node is a leaf or not)
     Node *new_p = new Node;                         // Remember to deal with some special case (e.g p is root)
     ValueType ret_value;
-    if (p->is_leaf_) {                  // There are actually two different place, one is that the son of last position is linked to the next Node,
-      for (int i = p->last_position_ / 2, j = 0; i < p->last_position_; i++, j++) { // anotheris that the middle data of leaf Node won't be 
-        new_p->value_[j] = p->value_[i];                                            // transfer to its father Node
+    if (p->is_leaf_) {        // There are actually two different place, one is that the son of last position is linked to the next Node,
+      for (int i = p->last_position_ / 2, j = 0; i < p->last_position_; i++, j++) { // another is that the middle data of leaf Node won't
+        new_p->value_[j] = p->value_[i];                                            // be transfered to its father Node
         new_p->son_[j] = p->son_[i];
       }
       new_p->is_leaf_ = true;
@@ -174,7 +174,18 @@ private:
     return ret_value;
   }
 
-  Pair<bool, ValueType> InsertNode(ValueType value, Node *p, int p_position = 0) { // Insert a value into the B+ tree (well I might have to
+  inline void merge(Node *prev, Node *next, int prev_position) {
+    for (int i = 0; i < next->last_position_; i++) {
+      prev->value_[i + prev->last_position_] = next->value_[i];
+      prev->son_[i + prev->last_position_] = next->son_[i];
+    }
+    prev->son[next->last_position_ + prev->last_position_] = next->son_[next->last_position_];
+    prev->last_position_ += next->last_position_;
+    write(prev, prev_position);
+    return;
+  }
+
+  Pair<bool, ValueType> InsertNode(ValueType value, Node *p, int p_position = 0) { // Insert a value into the B+ tree(well I might have to
     if (p == nullptr) {                                                            // write a funtion for client to use)
       p = root_;
     }
@@ -231,6 +242,9 @@ private:
   // There are lots of points that need concerning
   //p_relative_position stores the position of p in its
   Pair<bool, ValueType> DeleteNode(ValueType value, Node *p_father, Node *p, int p_relative_position) { // Delete a value from the B+ tree
+    if (p_father == nullptr) {
+      p = root_;
+    }
     if (!p->is_leaf_) {
       Node *next_p = new Node;
       int next_p_position;
@@ -246,8 +260,74 @@ private:
           }
         }
       }
-      DeleteNode(value, p, next_p, next_p_position);
+      Pair<bool, ValueType> ret = DeleteNode(value, p, next_p, next_p_position);
       delete next_p;
+      if (ret.first) {
+        p->value_[next_p_position - 1] = ret.second; // Replace the value that has been deleted
+      }
+      if (p->last_position_ < SIZE_OF_BLOCK / 2) {
+        if (p_father == nullptr) {
+          if (p->last_position_ == 0) {
+            delete p;
+          }
+          return Pair(false, ValueType());
+        }
+        Node *bro = new Node;
+        int bro_position, book = 0;
+        if (p_relative_position != 0) { // If p has a previous brother
+          bro_position = read(bro, p_father->son[p_relative_position - 1]);
+          if (bro->last_position_ > SIZE_OF_BLOCK / 2) { // Check whether we can borrow a value from there
+            for (int i = p->last_position_; i > 0; i--) { // We have to rewrite the data so that the value from brother can be insert
+              p->value_[i] = p->value_[i - 1];
+              p->son_[i + 1] = p->son_[i];
+            }
+            p->last_position_++;
+            p->value_[0] = p_father->value_[p_relative_position - 1]; // Change the key in father
+            p_father->value_[p_relative_position - 1] = bro->value_[bro->last_position_ - 1];
+            --bro->last_position_;
+            bro->son_[bro->last_position_] = bro->son_[bro->last_position_ + 1]; // Adjust the last node of brother node
+            write(p, p_father->son_[p_relative_position]);
+            write(bro, bro_position);
+            delete bro;
+            p_father->value_[p_relative_position - 1] = p->value_[0];
+          }
+        } else { // If p has no previous brother, then there must be a brother behind to it
+          bro_position = read(bro, p_father->son_[p_relative_position + 1]);
+          book = 1;
+          if (bro->last_position_ > SIZE_OF_BLOCK / 2) { // Check whether we can borrow a value from there
+            p->last_position_++;
+            p->value_[p->last_position_ - 1] = bro->value_[0];
+            for (int i = 0; i < bro->last_position_ - 1; i++) {
+              bro->value_[i] = bro->value_[i + 1];
+            }
+            p_father->value[p_relative_position] = bro->value[0]; // Change the key in father
+            --bro->last_position_;
+            bro->son_[bro->last_position_] = bro->son_[bro->last_position_ + 1]; // Adjust the value of brother node
+            write(p, p_father->son_[p_relative_position]);
+            write(bro, bro_position);
+            p_father->value_[p_relative_position] = bro->value_[0];
+            delete bro;
+          }
+        }
+        if (bro->last_position_ < SIZE_OF_BLOCK / 2) { // To merge two non-leaf nodes, you have pull a key from its father down
+          int delete_place_in_father = 0;
+          if (book == 0) {
+            bro->value_[bro->last_position_] = p_father->value_[p_relative_position - 1];
+            merge(bro, p, bro_position);
+            delete_place_in_father = p_relative_position - 1;
+          } else {
+            p->value_[p->last_position_] = p_father->value_[p_relative_position];
+            merge(p, bro, p_father->son_[p_relative_position - 1]);
+            delete_place_in_father = p_relative_position;
+          }
+          for (int i = delete_place_in_father; i < p_father->last_position_; i++) {
+            p_father->son_[i + 1] = p_father->son_[i + 2];
+            p_father->value_[i] = p_father->value_[i + 1];
+          }
+          p_father->last_position_--;
+          delete bro;
+        }
+      }
     } else {
       int delete_value_position = 0;
       for (; delete_value_position < p->last_position_; delete_value_position++) {  // Find the value to be delete
@@ -262,9 +342,10 @@ private:
         if (p_father == nullptr) { // If p is the root, then nothing have to be done
           return Pair(false, ValueType());
         }
+        Node *bro = new Node;
+        int bro_position, book = 0;
         if (p_relative_position != 0) { // If p has a previous brother
-          Node *bro = new Node;
-          int bro_position = read(bro, p_father->son[p_relative_position - 1]);
+          bro_position = read(bro, p_father->son[p_relative_position - 1]);
           if (bro->last_position_ > SIZE_OF_BLOCK / 2) { // Check whether we can borrow a value from there
             for (int i = delete_value_position; i > 0; i--) { // We have to rewrite the data so that the value from brother can be insert
               p->value_[i] = p->value_[i - 1];
@@ -272,16 +353,52 @@ private:
             }
             p->value_[0] = bro->value_[bro->last_position_];
             --bro->last_position_;
-            bro->son_[bro->last_position_] = bro->son_[bro->last_position_ + 1]; // Adjust the last node of brother
+            bro->son_[bro->last_position_] = bro->son_[bro->last_position_ + 1]; // Adjust the last node of brother node
             write(p, p_father->son_[p_relative_position]);
             write(bro, bro_position);
             delete bro;
-            return Pair(true, p->value[0]);
+            p_father->value_[p_relative_position - 1] = p->value_[0];
           }
         } else { // If p has no previous brother, then there must be a brother behind to it
-          Node *bro = new Node;
-          int bro_position = read(bro, p_father->son_[p_relative_position + 1]);
-          
+          bro_position = read(bro, p_father->son_[p_relative_position + 1]);
+          book = 1;
+          if (bro->last_position_ > SIZE_OF_BLOCK / 2) { // Check whether we can borrow a value from there
+            for (int i = delete_value_position; i < p->last_position_ - 1; i++) {
+              p->value_[i] = p->value_[i + 1];
+              p->son_[i + 1] = p->son[i + 2];
+            }
+            p->value_[p->last_position_ - 1] = bro->value_[0];
+            for (int i = 0; i < bro->last_position_ - 1; i++) {
+              bro->value_[i] = bro->value_[i + 1];
+            }
+            --bro->last_position_;
+            bro->son_[bro->last_position_] = bro->son_[bro->last_position_ + 1]; // Adjust the value of brother node
+            write(p, p_father->son_[p_relative_position]);
+            write(bro, bro_position);
+            p_father->value_[p_relative_position] = bro->value_[0];
+            delete bro;
+          }
+        }
+        if (bro->last_position_ < SIZE_OF_BLOCK / 2) { // To merge two leaf nodes, you have to merge it with its previous node
+          int delete_place_in_father = 0;
+          if (book == 0) {
+            merge(bro, p, bro_position);
+            delete_place_in_father = p_relative_position - 1;
+          } else {
+            merge(p, bro, p_father->son_[p_relative_position - 1]);
+            delete_place_in_father = p_relative_position;
+          }
+          for (int i = delete_place_in_father; i < p_father->last_position_; i++) {
+            p_father->son_[i + 1] = p_father->son_[i + 2];
+            p_father->value_[i] = p_father->value_[i + 1];
+          }
+          p_father->last_position_--;
+          delete bro;
+        }
+        if (delete_value_position == 0) {
+          return Pair(true, p->value_[0]);
+        } else {
+          return Pair(false, ValueType());
         }
       } else {
         for (int j = delete_value_position; j < p->last_position_ - 1; j++) {
@@ -299,6 +416,8 @@ private:
       }
     }
   }
+
+
 
 public:
 
