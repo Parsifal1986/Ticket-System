@@ -235,10 +235,10 @@ private:
     }
     ++p->last_position_;
     if (p->last_position_ == SIZE_OF_BLOCK) {
-      return Pair(true, Split(p, p_position));
+      return Pair<bool, ValueType>(true, Split(p, p_position));
     } else {
       write(p, p_position);
-      return Pair(false, ValueType());
+      return Pair<bool, ValueType>(false, ValueType());
     }
   }
 
@@ -275,7 +275,7 @@ private:
             root_position_ = read(root_, p->son_[0]);;
             delete p;
           }
-          return Pair(false, ValueType());
+          return Pair<bool, ValueType>(false, ValueType());
         }
         Node *bro = new Node;
         int bro_position, book = 0;
@@ -351,7 +351,13 @@ private:
       }
       if (p->last_position_ == SIZE_OF_BLOCK / 2) { // Devide circumstances into two condition
         if (p_father == nullptr) { // If p is the root, then nothing have to be done
-          return Pair(false, ValueType());
+          for (int i = delete_value_position; i < p->last_position_ - 1; i++) {
+            p->value_[i] = p->value_[i + 1];
+            p->son_[i] = p->son_[i + 1];
+          }
+          p->son_[p->last_position_ - 1] = p->son_[p->last_position_];
+          p->last_position_--;
+          return Pair<bool, ValueType>(false, ValueType());
         }
         Node *bro = new Node;
         int bro_position, book = 0;
@@ -405,7 +411,7 @@ private:
             merge(bro, p, bro_position);
             delete_place_in_father = p_relative_position - 1;
           } else {
-            merge(p, bro, p_father->son_[p_relative_position - 1]);
+            merge(p, bro, p_father->son_[p_relative_position]);
             delete_place_in_father = p_relative_position;
           }
           for (int i = delete_place_in_father; i < p_father->last_position_; i++) {
@@ -416,9 +422,9 @@ private:
           delete bro;
         }
         if (delete_value_position == 0) {
-          return Pair(true, p->value_[0]);
+          return Pair<bool, ValueType>(true, p->value_[0]);
         } else {
-          return Pair(false, ValueType());
+          return Pair<bool, ValueType>(false, ValueType());
         }
       } else {
         for (int j = delete_value_position; j < p->last_position_ - 1; j++) {
@@ -433,9 +439,9 @@ private:
           write(p, p_father->son_[p_relative_position]);
         }
         if (delete_value_position == 0) {
-          return Pair(true, p->value_[0]);
+          return Pair<bool, ValueType>(true, p->value_[0]);
         } else {
-          return Pair(false, ValueType());
+          return Pair<bool, ValueType>(false, ValueType());
         }
       }
     }
@@ -499,28 +505,31 @@ public:
       }
     }
     int pos = 0;
+    bool book = false;
     while (!(p.value_[pos].key_ == key) && p.value_[pos].key_ < key) {
       ++pos;
-      if (pos == p.last_position_) {
-        if (p.son_[p.last_position_] == -1) {
+      if (pos >= p.last_position_) {
+        if (p.son_[p.last_position_] == -1 || pos > p.last_position_) {
           throw new NothingFind();
         }
         read(p, p.son_[p.last_position_]);
         pos = 0;
-      } else if (key < p.value_[pos].key_) {
-        throw new NothingFind();
       }
     }
-    while (p.value_[pos].key_ == key) {
+    while (p.value_[pos].key_ == key && pos < p.last_position_) {
       std::cout << p.value_[pos].value_ << " ";
+      book = true;
       ++pos;
-      if (pos == p.last_position_) {
+      if (pos >= p.last_position_) {
         if (p.son_[p.last_position_] == -1) {
           return;
         }
         read(p, p.son_[p.last_position_]);
         pos = 0;
       }
+    }
+    if (!book) {
+      throw new NothingFind();
     }
   }
 
