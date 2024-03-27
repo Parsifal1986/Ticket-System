@@ -35,4 +35,15 @@ public:
   }
 };
 
+class NothingFind : public Exception {
+public:
+  NothingFind() {}
+
+  ~NothingFind() {}
+
+  void what() override {
+    std::cout << "null" << std::endl;
+  }
+};
+
 #endif // EXCEPTIONS_HPP
