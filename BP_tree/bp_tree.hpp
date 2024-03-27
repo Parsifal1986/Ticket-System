@@ -268,7 +268,7 @@ private:
           ret.first = false;
         }
       }
-      if (p->last_position_ < SIZE_OF_BLOCK / 2) {
+      if (p->last_position_ < std::ceil(SIZE_OF_BLOCK / 2.0) - 1) {
         if (p_father == nullptr) {
           if (p->last_position_ == 0) {
             root_ = new Node;
@@ -298,10 +298,11 @@ private:
             p_father->value_[p_relative_position - 1] = p->value_[0];
             book =0;
           }
-        } else { // If p has no previous brother, then there must be a brother behind to it
+        } 
+        if (book && p_relative_position <= p_father->last_position_) { // If p has no previous brother, then there must be a brother behind to it
           bro_position = read(bro, p_father->son_[p_relative_position + 1]);
           book = 2;
-          if (bro->last_position_ > SIZE_OF_BLOCK / 2) { // Check whether we can borrow a value from there
+          if (bro->last_position_ > std::ceil(SIZE_OF_BLOCK / 2.0) - 1) { // Check whether we can borrow a value from there
             p->last_position_++;
             p->value_[p->last_position_ - 1] = p_father->value_[p_relative_position];
             p_father->value_[p_relative_position] = bro->value_[0]; // Change the key in father
@@ -316,7 +317,7 @@ private:
             book = 0;
           }
         }
-        if (book && bro->last_position_ == SIZE_OF_BLOCK / 2) { // To merge two non-leaf nodes, you have pull a key from its father down
+        if (book && bro->last_position_ == std::ceil(SIZE_OF_BLOCK / 2.0) - 1) { // To merge two non-leaf nodes, you have pull a key from its father down
           int delete_place_in_father = 0;
           if (book == 1) {
             bro->value_[bro->last_position_] = p_father->value_[p_relative_position - 1];
@@ -336,7 +337,6 @@ private:
           p_father->last_position_--;
           delete bro;
         }
-
       }
       return ret;
     } else {
@@ -378,7 +378,8 @@ private:
             p_father->value_[p_relative_position - 1] = p->value_[0];
             book = 0;
           }
-        } else { // If p has no previous brother, then there must be a brother behind to it
+        }
+        if (book && p_relative_position <= p_father->last_position_) { // If book is not zero, then we can check the node behind p
           bro_position = read(bro, p_father->son_[p_relative_position + 1]);
           book = 2;
           if (bro->last_position_ > SIZE_OF_BLOCK / 2) { // Check whether we can borrow a value from there
@@ -475,7 +476,7 @@ public:
 
   void Insert(Key key, Data data) { // A function for client to use
     try {
-      InsertNode(ValueType(key, data), nullptr, root_position_).first;
+      InsertNode(ValueType(key, data), nullptr, root_position_);
     } catch (Exception *error) {
       throw error;
     }
