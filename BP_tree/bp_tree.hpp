@@ -69,6 +69,13 @@ private:
       }
       first = other.first;
       second = other.second;
+      return *this;
+    }
+
+    Pair &operator= (Pair other) {
+      first = other.first;
+      second = other.second;
+      return *this;
     }
   };
 
@@ -260,10 +267,16 @@ private:
           }
         }
       }
-      Pair<bool, ValueType> ret = DeleteNode(value, p, next_p, next_p_position);
+      Pair<bool, ValueType> ret;
+      try {
+        ret = DeleteNode(value, p, next_p, next_p_position);
+      } catch (Exception *error) {
+        delete next_p;
+        throw error;
+      }
       delete next_p;
       if (ret.first) {
-        if (p->value_[next_p_position - 1] == value) {
+        if (next_p_position > 0 && p->value_[next_p_position - 1] == value) {
           p->value_[next_p_position - 1] = ret.second; // Replace the value that has been deleted
           ret.first = false;
         }
@@ -282,7 +295,7 @@ private:
         if (p_relative_position != 0) { // If p has a previous brother
           bro_position = read(bro, p_father->son_[p_relative_position - 1]);
           book = 1;
-          if (bro->last_position_ > SIZE_OF_BLOCK / 2) { // Check whether we can borrow a value from there
+          if (bro->last_position_ > std::ceil(SIZE_OF_BLOCK / 2.0) - 1) { // Check whether we can borrow a value from there
             for (int i = p->last_position_; i > 0; i--) { // We have to rewrite the data so that the value from brother can be insert
               p->value_[i] = p->value_[i - 1];
               p->son_[i + 1] = p->son_[i];
@@ -294,12 +307,11 @@ private:
             bro->son_[bro->last_position_] = bro->son_[bro->last_position_ + 1]; // Adjust the last node of brother node
             write(p, p_father->son_[p_relative_position]);
             write(bro, bro_position);
-            delete bro;
             p_father->value_[p_relative_position - 1] = p->value_[0];
             book =0;
           }
         } 
-        if (book && p_relative_position <= p_father->last_position_) { // If p has no previous brother, then there must be a brother behind to it
+        if (book && p_relative_position < p_father->last_position_) { // If p has no previous brother, then there must be a brother behind to it
           bro_position = read(bro, p_father->son_[p_relative_position + 1]);
           book = 2;
           if (bro->last_position_ > std::ceil(SIZE_OF_BLOCK / 2.0) - 1) { // Check whether we can borrow a value from there
@@ -313,7 +325,6 @@ private:
             bro->son_[bro->last_position_] = bro->son_[bro->last_position_ + 1]; // Adjust the value of brother node
             write(p, p_father->son_[p_relative_position]);
             write(bro, bro_position);
-            delete bro;
             book = 0;
           }
         }
@@ -335,8 +346,8 @@ private:
             p_father->value_[i] = p_father->value_[i + 1];
           }
           p_father->last_position_--;
-          delete bro;
         }
+        delete bro;
       }
       return ret;
     } else {
@@ -379,7 +390,7 @@ private:
             book = 0;
           }
         }
-        if (book && p_relative_position <= p_father->last_position_) { // If book is not zero, then we can check the node behind p
+        if (book && p_relative_position < p_father->last_position_) { // If book is not zero, then we can check the node behind p
           bro_position = read(bro, p_father->son_[p_relative_position + 1]);
           book = 2;
           if (bro->last_position_ > SIZE_OF_BLOCK / 2) { // Check whether we can borrow a value from there
@@ -463,8 +474,6 @@ public:
       root_ = new Node;
       root_->is_leaf_ = true;
       root_position_ = write(root_, sizeof(root_position_));
-      Node *test = new Node;
-      read(test, root_position_);
       write(root_position_, 0);
     }
   }
