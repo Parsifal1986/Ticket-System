@@ -92,6 +92,20 @@ private:
     int son_[SIZE_OF_BLOCK + 1];
     bool is_leaf_;
     int last_position_;
+
+    Node& operator=(Node &other) {
+      if (this == &other) {
+        return *this;
+      }
+      is_leaf_ = other.is_leaf_;
+      last_position_ = other.last_position_;
+      for (int i = 0; i < last_position_; i++) {
+        value_[i] = other.value_[i];
+        son_[i] = other.son_[i];
+      }
+      son_[last_position_] = other.son_[other.last_position_];
+      return *this;
+    }
   };
 
   std::string filename_; // Store the filename (No use in pre-homework, might help in Ticket System)
@@ -281,6 +295,7 @@ private:
           ret.first = false;
         }
       }
+      int book;
       if (p->last_position_ < std::ceil(SIZE_OF_BLOCK / 2.0) - 1) {
         if (p_father == nullptr) {
           if (p->last_position_ == 0) {
@@ -291,7 +306,7 @@ private:
           return Pair<bool, ValueType>(false, ValueType());
         }
         Node *bro = new Node;
-        int bro_position, book = 3;
+        int bro_position;
         if (p_relative_position != 0) { // If p has a previous brother
           bro_position = read(bro, p_father->son_[p_relative_position - 1]);
           book = 1;
@@ -300,14 +315,14 @@ private:
               p->value_[i] = p->value_[i - 1];
               p->son_[i + 1] = p->son_[i];
             }
-            p->last_position_++;
+            p->son_[1] = p->son_[0];
+            p->son_[0] = bro->son_[bro->last_position_];
+            p->last_position_++; // Adjust the last node of p node
             p->value_[0] = p_father->value_[p_relative_position - 1]; // Change the key in father
             p_father->value_[p_relative_position - 1] = bro->value_[bro->last_position_ - 1];
             --bro->last_position_;
-            bro->son_[bro->last_position_] = bro->son_[bro->last_position_ + 1]; // Adjust the last node of brother node
             write(p, p_father->son_[p_relative_position]);
             write(bro, bro_position);
-            p_father->value_[p_relative_position - 1] = p->value_[0];
             book =0;
           }
         } 
@@ -316,10 +331,12 @@ private:
           book = 2;
           if (bro->last_position_ > std::ceil(SIZE_OF_BLOCK / 2.0) - 1) { // Check whether we can borrow a value from there
             p->last_position_++;
+            p->son_[p->last_position_] = bro->son_[0];
             p->value_[p->last_position_ - 1] = p_father->value_[p_relative_position];
             p_father->value_[p_relative_position] = bro->value_[0]; // Change the key in father
             for (int i = 0; i < bro->last_position_ - 1; i++) {
               bro->value_[i] = bro->value_[i + 1];
+              bro->son_[i] = bro->son_[i + 1];
             }
             --bro->last_position_;
             bro->son_[bro->last_position_] = bro->son_[bro->last_position_ + 1]; // Adjust the value of brother node
@@ -346,12 +363,13 @@ private:
             p_father->value_[i] = p_father->value_[i + 1];
           }
           p_father->last_position_--;
+          book = 0;
         }
         delete bro;
       } else {
         if (p_father == nullptr) {
           write(p, root_position_);
-        } else {
+        } else if(book) {
           write(p, p_father->son_[p_relative_position]);
         }
       }
@@ -522,17 +540,17 @@ public:
     }
     int pos = 0;
     bool book = false;
-    while (!(p.value_[pos].key_ == key) && p.value_[pos].key_ < key) {
+    while (pos < p.last_position_ && !(p.value_[pos].key_ == key) && p.value_[pos].key_ < key) {
       ++pos;
-      if (pos >= p.last_position_) {
-        if (p.son_[p.last_position_] == -1 || pos > p.last_position_) {
+      if (pos == p.last_position_) {
+        if (p.son_[p.last_position_] == -1) {
           throw new NothingFind();
         }
         read(p, p.son_[p.last_position_]);
         pos = 0;
       }
     }
-    while (p.value_[pos].key_ == key && pos < p.last_position_) {
+    while (pos < p.last_position_ && p.value_[pos].key_ == key) {
       std::cout << p.value_[pos].value_ << " ";
       book = true;
       ++pos;
