@@ -348,6 +348,12 @@ private:
           p_father->last_position_--;
         }
         delete bro;
+      } else {
+        if (p_father == nullptr) {
+          write(p, root_position_);
+        } else {
+          write(p, p_father->son_[p_relative_position]);
+        }
       }
       return ret;
     } else {
@@ -378,9 +384,9 @@ private:
           if (bro->last_position_ > SIZE_OF_BLOCK / 2) { // Check whether we can borrow a value from there
             for (int i = delete_value_position; i > 0; i--) { // We have to rewrite the data so that the value from brother can be insert
               p->value_[i] = p->value_[i - 1];
-              p->son_[i + 1] = p->son_[i];
+              p->son_[i] = p->son_[i - 1];
             }
-            p->value_[0] = bro->value_[bro->last_position_];
+            p->value_[0] = bro->value_[bro->last_position_ - 1];
             --bro->last_position_;
             bro->son_[bro->last_position_] = bro->son_[bro->last_position_ + 1]; // Adjust the last node of brother node
             write(p, p_father->son_[p_relative_position]);
@@ -508,7 +514,7 @@ public:
           break;
         } else {
           if (!(p.value_[i].key_ < key)) {
-            read(p, p.son_[std::max(i - 1, 0)]);
+            read(p, p.son_[i]);
             break;
           }
         }
