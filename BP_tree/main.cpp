@@ -9,7 +9,6 @@
 #include <utility>
 #include <map>
 #include <vector>
-#include <assert.h>
 
 struct Index {
   char c[65] = {'\0'};
@@ -26,7 +25,7 @@ struct Index {
 };
 
 void init_seed() {
-  srand(123);
+  srand(321);
 }
 
 int get_random() {
@@ -41,15 +40,21 @@ void random_string_generator(Index &tmp) {
 }
 
 int main() {
-  const char* file_path = "bpdata";
+  const char *file_path1 = "test1";
+  const char *file_path2 = "test2";
+  const char *file_path3 = "test3";
 
-  remove(file_path);
+  remove(file_path1);
+  remove(file_path2);
+  remove(file_path3);
 
-  // BpTree<Index, int> test;
+  BpTree<Index, int> test1("test1");
 
-  // BpTree<int, int> test1;
+  BpTree<int, int> test2("test2");
 
-  BpTree<Index, int> test1;
+  BpTree<Index, int> test3("test3");
+
+  // test1
 
   // int n;
 
@@ -66,14 +71,14 @@ int main() {
 
   //     std::cin >> index.c >> data;
 
-  //     test.Insert(index, data);
+  //     test1.Insert(index, data);
   //   } else if (command == "delete") {
   //     Index index;
   //     int data;
 
   //     std::cin >> index.c >> data;
   //     try {
-  //       test.Delete(index, data);
+  //       test1.Delete(index, data);
   //     } catch (Exception *error) {
   //       delete error;
   //     }
@@ -82,7 +87,7 @@ int main() {
 
   //     std::cin >> index.c;
   //     try {
-  //       test.Find(index);
+  //       test1.Find(index);
   //       std::cout << std::endl;
   //     } catch (Exception *error) {
   //       error->what();
@@ -91,15 +96,17 @@ int main() {
   //   }
   // }
 
+  //test2
+
   std::vector<std::pair<Index, int>> number;
   std::map<Index, int> memory;
 
-  std::string tmp_str = "iwjrfduujgrkuddsfkjjwqjjoiaptulbquvxxprgvksqnwktiwefmpqczsusnfuf";
+  std::string tmp_str = "xojdkagshqnwviufwlxusafosbvsqbrosateazwjrjhmtcrqpqmhqrykstclwvbo";
   Index tmp_index; std::strcpy(tmp_index.c, tmp_str.c_str());
   for (int i = 1; i <= 300000; i++) {
     std::cout << i << " " << std::endl;
-    if (i == 403) {
-      std::cout << " HERE";
+    if (i == 287656) {
+      std::cout << "Here";
     }
     try {
       test1.Find(tmp_index);
@@ -116,7 +123,7 @@ int main() {
         }
         Index tmp = number[get_random() % number.size()].first;
         try {
-          test1.Find(tmp);
+          test3.Find(tmp);
           std::cout << " " << memory[tmp] << std::endl;
         } catch (Exception *error) {
           if (memory.find(tmp) != memory.end()) {
@@ -136,7 +143,7 @@ int main() {
           random_string_generator(index);
         } while (memory.find(index) != memory.end());
         try {
-          test1.Insert(index, value = get_random());
+          test3.Insert(index, value = get_random());
           memory.insert(std::make_pair(index, value));
           number.push_back(std::make_pair(index, value));
         } catch (Exception *error) {
@@ -152,7 +159,7 @@ int main() {
           random_string_generator(index);
         } while (memory.find(index) != memory.end());
         try {
-          test1.Insert(index, value = get_random());
+          test3.Insert(index, value = get_random());
           memory.insert(std::make_pair(index, value));
           number.push_back(std::make_pair(index, value));
         } catch (Exception *error) {
@@ -168,7 +175,7 @@ int main() {
           random_string_generator(index);
         } while (memory.find(index) != memory.end());
         try {
-          test1.Insert(index, value = get_random());
+          test3.Insert(index, value = get_random());
           memory.insert(std::make_pair(index, value));
           number.push_back(std::make_pair(index, value));
         } catch (Exception *error) {
@@ -182,7 +189,7 @@ int main() {
           continue;
         }
         try {
-          test1.Delete(number.back().first, number.back().second);
+          test3.Delete(number.back().first, number.back().second);
           memory.erase(memory.find(number.back().first));
         } catch (...) {
           if (memory.erase(memory.find(number.back().first)) != memory.end()) {
@@ -195,17 +202,59 @@ int main() {
     }
   }
 
+  while (!number.empty()) {
+    try {
+      test3.Delete(number.back().first, number.back().second);
+      memory.erase(memory.find(number.back().first));
+    } catch(...) {
+      if (memory.find(number.back().first) != memory.end()) {
+        std::cout << number.back().first.c;
+        std::cout << "Fail" << std::endl;
+        getchar();
+      }
+    }
+    number.pop_back();
+  }
+
+  // test3
+
   // for (int j = 0; j <= 1e4; j++) {
   //   for (int i = 1; i <= 9; i++) {
-  //     test1.Insert(i, i + j);
+  //     test2.Insert(i, i + j);
   //   }
   // }
 
   // try {
-  //   test1.Find(9);
+  //   test2.Find(9);
   // } catch (Exception *error) {
   //   error->what();
   //   delete error;
   // }
+
+  // test4
+
+  // const char* file_path4 = "test4";
+
+  // remove(file_path4);
+
+  // BpTree<Index, int> *test4 = new BpTree<Index, int>("test4");
+
+  // Index test_index;
+  // std::strcpy(test_index.c, "okay");
+
+  // for (int i = 1; i <= 3025; i++) {
+  //   test4->Insert(test_index, i);
+  // }
+  // test4->Find(test_index);
+
+  // test4->Delete(test_index, 1);
+
+  // test4->Find(test_index);
+
+  // delete test4;
+
+  // test4 = new BpTree<Index, int>("test4");
+
+  // test4->Find(test_index);
   return 0;
 }

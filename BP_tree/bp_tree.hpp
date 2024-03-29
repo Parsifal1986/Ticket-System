@@ -285,13 +285,13 @@ private:
         if (p_father == nullptr) {
           if (p->last_position_ == 0) {
             root_ = new Node;
-            root_position_ = read(root_, p->son_[0]);;
+            root_position_ = read(root_, p->son_[0]);
             delete p;
           }
           return Pair<bool, ValueType>(false, ValueType());
         }
         Node *bro = new Node;
-        int bro_position, book = 0;
+        int bro_position, book = 3;
         if (p_relative_position != 0) { // If p has a previous brother
           bro_position = read(bro, p_father->son_[p_relative_position - 1]);
           book = 1;
@@ -338,7 +338,7 @@ private:
           } else {
             p->value_[p->last_position_] = p_father->value_[p_relative_position];
             p->last_position_++;
-            merge(p, bro, p_father->son_[p_relative_position - 1]);
+            merge(p, bro, p_father->son_[p_relative_position]);
             delete_place_in_father = p_relative_position;
           }
           for (int i = delete_place_in_father; i < p_father->last_position_; i++) {
@@ -364,7 +364,7 @@ private:
         }
       }
       if (delete_value_position == p->last_position_ || !(p->value_[delete_value_position] == value)) {
-        throw IllegalDelete();
+        throw new IllegalDelete();
       }
       if (p->last_position_ == SIZE_OF_BLOCK / 2) { // Devide circumstances into two condition
         if (p_father == nullptr) { // If p is the root, then nothing have to be done
@@ -377,7 +377,7 @@ private:
           return Pair<bool, ValueType>(false, ValueType());
         }
         Node *bro = new Node;
-        int bro_position, book = 0;
+        int bro_position, book = 3;
         if (p_relative_position != 0) { // If p has a previous brother
           bro_position = read(bro, p_father->son_[p_relative_position - 1]);
           book = 1;
@@ -432,7 +432,7 @@ private:
             merge(p, bro, p_father->son_[p_relative_position]);
             delete_place_in_father = p_relative_position;
           }
-          for (int i = delete_place_in_father; i < p_father->last_position_; i++) {
+          for (int i = delete_place_in_father; i < p_father->last_position_ - 1; i++) {
             p_father->son_[i + 1] = p_father->son_[i + 2];
             p_father->value_[i] = p_father->value_[i + 1];
           }
