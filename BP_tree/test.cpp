@@ -232,12 +232,12 @@ private:
            i++, j++) {
         new_p->value_[j] = p->value_[i];
         new_p->son_[j] = p->son_[i];
+        p->son_[i] = -1;
       }
       new_p->last_position_ = p->last_position_ - (p->last_position_ / 2) - 1;
       new_p->son_[new_p->last_position_] = p->son_[p->last_position_];
       p->last_position_ /= 2;
-      size_t tmp_right = p->son_[p->last_position_ + 1] =
-          write(new_p, 0, std::ios::end);
+      size_t tmp_right = p->son_[p->last_position_ + 1] = write(new_p, 0, std::ios::end);
       size_t tmp_left = write(p, p_position);
       ret_value = p->value_[p->last_position_];
       if (p == root_) { // if the Node to be split is the root Node, then we
@@ -274,6 +274,7 @@ private:
                  0) {   // Insert a value into the B+ tree(well I might have to
     if (p == nullptr) { // write a funtion for client to use)
       p = root_;
+      p_position = root_position_;
     }
     int new_son = -1;
     if (!p->is_leaf_) {
@@ -282,16 +283,17 @@ private:
       for (int i = 0; i <= p->last_position_; i++) {
         if (i == p->last_position_) {
           read(next_p, p->son_[p->last_position_]);
-          next_p_position = p->son_[p->last_position_];
+          next_p_position = p->last_position_;
         } else {
           if (value < p->value_[i]) {
             read(next_p, p->son_[i]);
-            next_p_position = p->son_[i];
+            next_p_position = i;
             break;
           }
         }
       }
-      Pair<bool, ValueType> ret = InsertNode(value, next_p, next_p_position);
+      Pair<bool, ValueType> ret =
+          InsertNode(value, next_p, p->son_[next_p_position]);
       if (!ret.first) {
         delete next_p;
         return ret;
@@ -370,8 +372,11 @@ private:
           if (p->last_position_ == 0) {
             root_ = new Node;
             root_position_ = read(root_, p->son_[0]);
+            write(root_position_, 0);
             delete p;
+            return Pair<bool, ValueType>(false, ValueType());
           }
+          write(p, root_position_);
           return Pair<bool, ValueType>(false, ValueType());
         }
         Node *bro = new Node;
@@ -577,9 +582,9 @@ private:
       } else {
         for (int j = delete_value_position; j < p->last_position_ - 1; j++) {
           p->value_[j] = p->value_[j + 1];
-          p->son_[j] = p->son_[j + 1];
         }
         p->son_[p->last_position_ - 1] = p->son_[p->last_position_];
+        p->son_[p->last_position_] = -1;
         --p->last_position_;
         if (p_father == nullptr) { // If there are enough value in the Node,
                                    // then we can just erase it
