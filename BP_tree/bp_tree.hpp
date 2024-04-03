@@ -89,7 +89,7 @@ private:
     }
 
     ValueType value_[SIZE_OF_BLOCK];
-    int son_[SIZE_OF_BLOCK + 1];
+    size_t son_[SIZE_OF_BLOCK + 1];
     bool is_leaf_;
     int last_position_;
 
@@ -109,58 +109,59 @@ private:
   };
 
   std::string filename_; // Store the filename (No use in pre-homework, might help in Ticket System)
-  int root_position_;
+  size_t root_position_;
 
   Node *root_; // Store the root Node (Might be frequently read and modify, thus put in memory)
 
   std::fstream file_;
 
   template <class Type>
-  inline int read(Type *data, int position, std::ios_base::seekdir mode = std::ios::beg) { // Simple read funtion(to simplify my code)
+  inline size_t read(Type *data, size_t position, std::ios_base::seekdir mode = std::ios::beg) { // Simple read funtion(to simplify my code)
     file_.seekg(position, mode);
-    int tmp = int(file_.tellg());
+    size_t tmp = size_t(file_.tellg());
     file_.read(reinterpret_cast<char *>(data), sizeof(*data));
     return tmp;
   }
 
   template <class Type>
-  inline int write(Type *data, int position, std::ios_base::seekdir mode = std::ios::beg) { // Simple write funtion
+  inline size_t write(Type *data, size_t position, std::ios_base::seekdir mode = std::ios::beg) { // Simple write funtion
     file_.seekp(position, mode);
-    int tmp = int(file_.tellp());
+    size_t tmp = size_t(file_.tellp());
     file_.write(reinterpret_cast<char *>(data), sizeof(*data));
     return tmp;
   }
   
   template <class Type>
-  inline int read(Type &data, int position, std::ios_base::seekdir mode = std::ios::beg) { // Simple read funtion(to simplify my code)
+  inline size_t read(Type &data, size_t position, std::ios_base::seekdir mode = std::ios::beg) { // Simple read funtion(to simplify my code)
     file_.seekg(position, mode);
-    int tmp = int(file_.tellg());
+    size_t tmp = size_t(file_.tellg());
     file_.read(reinterpret_cast<char *>(&data), sizeof(data));
     return tmp;
   }
 
   template <class Type>
-  inline int write(Type data, int position, std::ios_base::seekdir mode = std::ios::beg) { // Simple write funtion
+  inline size_t write(Type data, size_t position, std::ios_base::seekdir mode = std::ios::beg) { // Simple write funtion
     file_.seekp(position, mode);
-    int tmp = int(file_.tellp());
+    size_t tmp = size_t(file_.tellp());
     file_.write(reinterpret_cast<char *>(&data), sizeof(data));
     return tmp;
   }
 
-  inline ValueType Split(Node *p, int p_position) { // Split a full block into two parts (the methods depends on whether the Node is a leaf or not)
+  inline ValueType Split(Node *p, size_t p_position) { // Split a full block into two parts (the methods depends on whether the Node is a leaf or not)
     Node *new_p = new Node;                         // Remember to deal with some special case (e.g p is root)
     ValueType ret_value;
     if (p->is_leaf_) {        // There are actually two different place, one is that the son of last position is linked to the next Node,
       for (int i = p->last_position_ / 2, j = 0; i < p->last_position_; i++, j++) { // another is that the middle data of leaf Node won't
         new_p->value_[j] = p->value_[i];                                            // be transfered to its father Node
-        new_p->son_[j] = p->son_[i];
+        p->son_[i] = -1;
       }
       new_p->is_leaf_ = true;
       new_p->last_position_ = p->last_position_ - (p->last_position_ / 2);
       new_p->son_[new_p->last_position_] = p->son_[p->last_position_];
+      p->son_[p->last_position_] = -1;
       p->last_position_ /= 2;
-      int tmp_right = p->son_[p->last_position_] = write(new_p, 0, std::ios::end);
-      int tmp_left = write(p, p_position);
+      size_t tmp_right = p->son_[p->last_position_] = write(new_p, 0, std::ios::end);
+      size_t tmp_left = write(p, p_position);
       ret_value = new_p->value_[0];
       if (p == root_) { // if the Node to be split is the root Node, then we will have to add a new Node as new root
         root_ = new Node;
@@ -180,8 +181,8 @@ private:
       new_p->last_position_ = p->last_position_ - (p->last_position_ / 2) - 1;
       new_p->son_[new_p->last_position_] = p->son_[p->last_position_];
       p->last_position_ /= 2;
-      int tmp_right = p->son_[p->last_position_ + 1] = write(new_p, 0, std::ios::end);
-      int tmp_left = write(p, p_position);
+      size_t tmp_right = p->son_[p->last_position_ + 1] = write(new_p, 0, std::ios::end);
+      size_t tmp_left = write(p, p_position);
       ret_value = p->value_[p->last_position_];
       if (p == root_) { // if the Node to be split is the root Node, then we will have to add a new Node as new root
         root_ = new Node;
@@ -198,7 +199,7 @@ private:
     return ret_value;
   }
 
-  inline void merge(Node *prev, Node *next, int prev_position) {
+  inline void merge(Node *prev, Node *next, size_t prev_position) {
     for (int i = 0; i < next->last_position_; i++) {
       prev->value_[i + prev->last_position_] = next->value_[i];
       prev->son_[i + prev->last_position_] = next->son_[i];
@@ -209,9 +210,10 @@ private:
     return;
   }
 
-  Pair<bool, ValueType> InsertNode(ValueType value, Node *p, int p_position = 0) { // Insert a value into the B+ tree(well I might have to
+  Pair<bool, ValueType> InsertNode(ValueType value, Node *p, size_t p_position = 0) { // Insert a value into the B+ tree(well I might have to
     if (p == nullptr) {                                                            // write a funtion for client to use)
       p = root_;
+      p_position = root_position_;
     }
     int new_son = -1;
     if (!p->is_leaf_) {
@@ -220,28 +222,30 @@ private:
       for (int i = 0; i <= p->last_position_; i++) {
         if (i == p->last_position_) {
           read(next_p, p->son_[p->last_position_]);
-          next_p_position = p->son_[p->last_position_];
+          next_p_position = p->last_position_;
         } else {
           if (value < p->value_[i]) {
             read(next_p, p->son_[i]);
-            next_p_position = p->son_[i];
+            next_p_position = i;
             break;
           }
         }
       }
-      Pair<bool, ValueType> ret = InsertNode(value, next_p, next_p_position);
-      new_son = next_p->is_leaf_ ? next_p->son_[next_p->last_position_] : next_p->son_[next_p->last_position_ + 1];
-      delete next_p;
+      Pair<bool, ValueType> ret = InsertNode(value, next_p, p->son_[next_p_position]);
       if (!ret.first) {
+        delete next_p;
         return ret;
       } else {
         value = ret.second;
+        new_son = next_p->is_leaf_ ? next_p->son_[next_p->last_position_] : next_p->son_[next_p->last_position_ + 1];
+        delete next_p;
       }
     }
     for (int i = 0; i <= p->last_position_; i++) {
       if (i == p->last_position_) {
         p->value_[p->last_position_] = value;
         p->son_[p->last_position_ + 1] = p->is_leaf_ ? p->son_[p->last_position_] : new_son;
+        p->son_[p->last_position_] = p->is_leaf_ ? -1 : p->son_[p->last_position_];
       } else {
         if (!(p->value_[i] < value)) {
           for (int j = p->last_position_; j > i; j--) {
@@ -251,7 +255,7 @@ private:
           p->value_[i] = value;
           p->son_[i + 1] = new_son;
           break;
-        }  
+        }
       }
     }
     ++p->last_position_;
@@ -265,7 +269,7 @@ private:
 
   // There are lots of points that need concerning
   //p_relative_position stores the position of p in its
-  Pair<bool, ValueType> DeleteNode(ValueType value, Node *p_father, Node *p, int p_relative_position) { // Delete a value from the B+ tree
+  Pair<bool, ValueType> DeleteNode(ValueType value, Node *p_father, Node *p, size_t p_relative_position) { // Delete a value from the B+ tree
     if (!p->is_leaf_) {
       Node *next_p = new Node;
       int next_p_position;
@@ -295,18 +299,20 @@ private:
           ret.first = false;
         }
       }
-      int book;
       if (p->last_position_ < std::ceil(SIZE_OF_BLOCK / 2.0) - 1) {
         if (p_father == nullptr) {
           if (p->last_position_ == 0) {
             root_ = new Node;
             root_position_ = read(root_, p->son_[0]);
+            write(root_position_, 0);
             delete p;
+            return Pair<bool, ValueType>(false, ValueType());
           }
+          write(p, root_position_);
           return Pair<bool, ValueType>(false, ValueType());
         }
         Node *bro = new Node;
-        int bro_position;
+        int bro_position, book = 3;
         if (p_relative_position != 0) { // If p has a previous brother
           bro_position = read(bro, p_father->son_[p_relative_position - 1]);
           book = 1;
@@ -363,13 +369,12 @@ private:
             p_father->value_[i] = p_father->value_[i + 1];
           }
           p_father->last_position_--;
-          book = 0;
         }
         delete bro;
       } else {
         if (p_father == nullptr) {
           write(p, root_position_);
-        } else if(book) {
+        } else {
           write(p, p_father->son_[p_relative_position]);
         }
       }
@@ -439,9 +444,9 @@ private:
           int delete_place_in_father = 0;
           for (int i = delete_value_position; i < p->last_position_ - 1; i++) {
             p->value_[i] = p->value_[i + 1];
-            p->son_[i] = p->son_[i + 1];
           }
           p->son_[p->last_position_ - 1] = p->son_[p->last_position_];
+          p->son_[p->last_position_] = -1;
           p->last_position_--;
           if (book == 1) {
             merge(bro, p, bro_position);
@@ -465,9 +470,9 @@ private:
       } else {
         for (int j = delete_value_position; j < p->last_position_ - 1; j++) {
           p->value_[j] = p->value_[j + 1];
-          p->son_[j] = p->son_[j + 1];
         }
         p->son_[p->last_position_ - 1] = p->son_[p->last_position_];
+        p->son_[p->last_position_] = -1;
         --p->last_position_;
         if (p_father == nullptr) { // If there are enough value in the Node, then we can just erase it
           write(p, root_position_);
