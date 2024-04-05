@@ -18,7 +18,22 @@ static const int SIZE_OF_BLOCK = appoint_size ? appoint_size : (4096 - 9) / (SIZ
 
 private:
 
-  struct ValueType{ // Store the index and value in structure Node
+  class LruCache {
+  static const int MOD = 1e4 + 7;
+  private:
+    struct LinkListNode {
+      LinkListNode *prev, *next;
+      void *data;
+    };
+    LinkListNode *head, *tail;
+    LinkListNode *hash_map[MOD];
+  public:
+    LruCache() = default;
+
+    ~LruCache() = default;
+  };
+
+  struct ValueType { // Store the index and value in structure Node
     Key key_;
     Data value_;
 
@@ -80,6 +95,11 @@ private:
   };
 
   struct Node {
+    ValueType value_[SIZE_OF_BLOCK];
+    size_t son_[SIZE_OF_BLOCK + 1];
+    bool is_leaf_;
+    int last_position_;
+
     Node () { // Default constructer
       last_position_ = 0;
       is_leaf_ = false;
@@ -87,11 +107,6 @@ private:
         son_[i] = -1;
       }
     }
-
-    ValueType value_[SIZE_OF_BLOCK];
-    size_t son_[SIZE_OF_BLOCK + 1];
-    bool is_leaf_;
-    int last_position_;
 
     Node& operator=(Node &other) {
       if (this == &other) {
@@ -105,6 +120,74 @@ private:
       }
       son_[last_position_] = other.son_[other.last_position_];
       return *this;
+    }
+
+    inline int lower_bound(ValueType target) {
+      int l = 0, count = last_position_, step;
+
+      while (count != 0) {
+        step = count / 2;
+
+        if (value_[l + step] < target) {
+          l = l + step + 1;
+          count -= step + 1;
+        } else {
+          count = step;
+        }
+      }
+
+      return l;
+    }
+
+    inline int upper_bound(ValueType target) {
+      int l = 0, count = last_position_, step;
+
+      while (count != 0) {
+        step = count / 2;
+
+        if (value_[l + step] < target || value_[l + step] == target) {
+          l = l + step + 1;
+          count -= step + 1;
+        } else {
+          count = step;
+        }
+      }
+
+      return l;
+    }
+
+    inline int lower_bound(Key target) {
+      int l = 0, count = last_position_, step;
+
+      while (count != 0) {
+        step = count / 2;
+
+        if (value_[l + step].key_ < target) {
+          l = l + step + 1;
+          count -= step + 1;
+        } else {
+          count = step;
+        }
+      }
+
+      return l;
+    }
+
+    inline int upper_bound(Key target) {
+      int l = 0, count = last_position_, step;
+
+      while (count != 0) {
+        step = count / 2;
+
+        if (value_[l + step].key_ < target || value_[l + step].key_ == target) {
+          l = l + step + 1;
+          count -= step + 1;
+        } else {
+          count = step;
+        }
+      }
+
+      return l;
     }
   };
 
@@ -216,21 +299,10 @@ private:
       p_position = root_position_;
     }
     int new_son = -1;
+    int next_p_position = p->upper_bound(value);
     if (!p->is_leaf_) {
       Node *next_p = new Node;
-      int next_p_position;
-      for (int i = 0; i <= p->last_position_; i++) {
-        if (i == p->last_position_) {
-          read(next_p, p->son_[p->last_position_]);
-          next_p_position = p->last_position_;
-        } else {
-          if (value < p->value_[i]) {
-            read(next_p, p->son_[i]);
-            next_p_position = i;
-            break;
-          }
-        }
-      }
+      read(next_p, p->son_[next_p_position]);
       Pair<bool, ValueType> ret = InsertNode(value, next_p, p->son_[next_p_position]);
       if (!ret.first) {
         delete next_p;
@@ -241,22 +313,16 @@ private:
         delete next_p;
       }
     }
-    for (int i = 0; i <= p->last_position_; i++) {
-      if (i == p->last_position_) {
-        p->value_[p->last_position_] = value;
-        p->son_[p->last_position_ + 1] = p->is_leaf_ ? p->son_[p->last_position_] : new_son;
-        p->son_[p->last_position_] = p->is_leaf_ ? -1 : p->son_[p->last_position_];
-      } else {
-        if (!(p->value_[i] < value)) {
-          for (int j = p->last_position_; j > i; j--) {
-            p->value_[j] = p->value_[j - 1];
-            p->son_[j + 1] = p->son_[j];
-          }
-          p->value_[i] = value;
-          p->son_[i + 1] = new_son;
-          break;
-        }
-      }
+    for (int j = p->last_position_; j > next_p_position; j--) {
+      p->value_[j] = p->value_[j - 1];
+      p->son_[j + 1] = p->son_[j];
+    }
+    p->value_[next_p_position] = value;
+    if (next_p_position == p->last_position_) {
+      p->son_[next_p_position + 1] =
+          p->is_leaf_ ? p->son_[p->last_position_] : new_son;
+    } else {
+      p->son_[next_p_position + 1] = new_son;
     }
     ++p->last_position_;
     if (p->last_position_ == SIZE_OF_BLOCK) {
@@ -272,19 +338,8 @@ private:
   Pair<bool, ValueType> DeleteNode(ValueType value, Node *p_father, Node *p, size_t p_relative_position) { // Delete a value from the B+ tree
     if (!p->is_leaf_) {
       Node *next_p = new Node;
-      int next_p_position;
-      for (int i = 0; i <= p->last_position_; i++) {
-        if (i == p->last_position_) {
-          read(next_p, p->son_[p->last_position_]);
-          next_p_position = p->last_position_;
-        } else {
-          if (value < p->value_[i]) {
-            read(next_p, p->son_[i]);
-            next_p_position = i;
-            break;
-          }
-        }
-      }
+      int next_p_position = p->upper_bound(value);
+      read(next_p, next_p_position);
       Pair<bool, ValueType> ret;
       try {
         ret = DeleteNode(value, p, next_p, next_p_position);
@@ -531,17 +586,7 @@ public:
   void Find(Key key) { // Find those value whose key equals to key that input by users
     Node p = *root_;
     while (!p.is_leaf_) {
-      for (int i = 0; i <= p.last_position_; i++) {
-        if (i == p.last_position_) {
-          read(p, p.son_[p.last_position_]);
-          break;
-        } else {
-          if (!(p.value_[i].key_ < key)) {
-            read(p, p.son_[i]);
-            break;
-          }
-        }
-      }
+      read(p, p.lower_bound(key));
     }
     int pos = 0;
     bool book = false;
