@@ -2,6 +2,7 @@
 #define BP_TREE_HPP
 
 #include <algorithm>
+#include <cstddef>
 #include <iostream>
 #include <cstdio>
 #include <string>
@@ -14,24 +15,9 @@ template <class Key, class Data, int appoint_size = 0>
 class BpTree {
 
 static const int SIZE_OF_VALUE = sizeof(Key) + sizeof(Data);
-static const int SIZE_OF_BLOCK = appoint_size ? appoint_size : (4096 - 9) / (SIZE_OF_VALUE + 4);
+static const int SIZE_OF_BLOCK = appoint_size ? appoint_size : std::floor((4096 - 9) / (SIZE_OF_VALUE + 8));
 
 private:
-
-  class LruCache {
-  static const int MOD = 1e4 + 7;
-  private:
-    struct LinkListNode {
-      LinkListNode *prev, *next;
-      void *data;
-    };
-    LinkListNode *head, *tail;
-    LinkListNode *hash_map[MOD];
-  public:
-    LruCache() = default;
-
-    ~LruCache() = default;
-  };
 
   struct ValueType { // Store the index and value in structure Node
     Key key_;
@@ -193,6 +179,7 @@ private:
 
   std::string filename_; // Store the filename (No use in pre-homework, might help in Ticket System)
   size_t root_position_;
+  size_t size_;
 
   Node *root_; // Store the root Node (Might be frequently read and modify, thus put in memory)
 
@@ -550,6 +537,7 @@ public:
     if (std::ifstream(filename_).good()) {
       file_.open(filename_, std::ios::in | std::ios::out | std::ios::binary);
       read(root_position_, 0);
+      read(size_, sizeof(size_t));
       root_ = new Node;
       read(root_, root_position_);
     } else {
@@ -558,7 +546,9 @@ public:
       root_ = new Node;
       root_->is_leaf_ = true;
       root_position_ = write(root_, sizeof(root_position_));
+      size_ = 1;
       write(root_position_, 0);
+      write(size_, sizeof(size_t));
     }
   }
 
