@@ -15,7 +15,7 @@ template <class Key, class Data, int appoint_size = 0>
 class BpTree {
 
 static const int SIZE_OF_VALUE = sizeof(Key) + sizeof(Data);
-static const int SIZE_OF_BLOCK = appoint_size ? appoint_size : std::floor((4096 - 9) / (SIZE_OF_VALUE + 8));
+static const int SIZE_OF_BLOCK = appoint_size ? appoint_size : (4096 - 9) / (SIZE_OF_VALUE + 8) - 2;
 
 private:
 
@@ -179,7 +179,6 @@ private:
 
   std::string filename_; // Store the filename (No use in pre-homework, might help in Ticket System)
   size_t root_position_;
-  size_t size_;
 
   Node *root_; // Store the root Node (Might be frequently read and modify, thus put in memory)
 
@@ -326,7 +325,7 @@ private:
     if (!p->is_leaf_) {
       Node *next_p = new Node;
       int next_p_position = p->upper_bound(value);
-      read(next_p, next_p_position);
+      read(next_p, p->son_[next_p_position]);
       Pair<bool, ValueType> ret;
       try {
         ret = DeleteNode(value, p, next_p, next_p_position);
@@ -537,7 +536,6 @@ public:
     if (std::ifstream(filename_).good()) {
       file_.open(filename_, std::ios::in | std::ios::out | std::ios::binary);
       read(root_position_, 0);
-      read(size_, sizeof(size_t));
       root_ = new Node;
       read(root_, root_position_);
     } else {
@@ -546,9 +544,7 @@ public:
       root_ = new Node;
       root_->is_leaf_ = true;
       root_position_ = write(root_, sizeof(root_position_));
-      size_ = 1;
       write(root_position_, 0);
-      write(size_, sizeof(size_t));
     }
   }
 
@@ -576,7 +572,7 @@ public:
   void Find(Key key) { // Find those value whose key equals to key that input by users
     Node p = *root_;
     while (!p.is_leaf_) {
-      read(p, p.lower_bound(key));
+      read(p, p.son_[p.lower_bound(key)]);
     }
     int pos = 0;
     bool book = false;
