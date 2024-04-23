@@ -8,4 +8,4 @@ This is a homework of SJTU ACM Class 2023
 
 - [ ] Finish manage system
 
-- [ ] bonus()
+- [ ] bonus(LRU)
