@@ -56,7 +56,6 @@ private:
   void RemoveBack() {
     auto node = datalist_.back();
 
-
     int key = hashfunction_(node->index_) % MOD;
 
     auto p = hashmap_[key].begin();
@@ -76,16 +75,28 @@ private:
     auto it = datalist_.end(); --it;
 
     datalist_.erase(it);
+
+    delete node;
   }
 
 public:
-  LruCache(std::string file_path = "bpdata") {
+  LruCache() {
     appoint_hash_size_ = appoint_hash_size;
     cache_size_ = cache_size;
-    file_.open(file_path);
   };
 
-  ~LruCache() = default;
+  ~LruCache() {
+    while (datalist_.size()) {
+      auto it = datalist_.begin();
+
+      file_.seekp((*it)->index_, std::ios::beg);
+      file_.write(reinterpret_cast<char*>((*it)->data_), sizeof(ValueType));
+      delete (*it);
+
+      datalist_.erase(it);
+    }
+    file_.close();
+  };
 
   void Insert(int index, ValueType* data) {
     if (size_counter_ == MAX) {
@@ -112,6 +123,10 @@ public:
       }
     }
     return nullptr;
+  }
+
+  void set_filepath(std::string filename) {
+    file_.open(filename);
   }
 };
 

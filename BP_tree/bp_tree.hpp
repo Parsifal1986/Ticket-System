@@ -10,6 +10,7 @@
 #include <fstream>
 #include <filesystem>
 #include "Exceptions.hpp"
+#include "LRU.hpp"
 
 template <class Key, class Data, int appoint_size = 0>
 class BpTree {
@@ -28,6 +29,14 @@ private:
     ValueType(Key key, Data value) {
       key_ = key;
       value_ = value;
+    }
+
+    ValueType(ValueType& other) {
+      if (this == &other) {
+        return;
+      }
+      key_ = other.key_;
+      value_ = other.value_;
     }
 
     bool operator<(ValueType &rhs) {
@@ -92,6 +101,19 @@ private:
       for (int i = 0; i <= SIZE_OF_BLOCK; i++) {
         son_[i] = -1;
       }
+    }
+
+    Node(Node &other) { // Default constructer
+      if (this == &other) {
+        return;
+      }
+      last_position_ = other.last_position_;
+      is_leaf_ = other.is_leaf_;
+      for (int i = 0; i < SIZE_OF_BLOCK; i++) {
+        son_[i] = other.son_[i];
+        value_[i] = other.value_[i];
+      }
+      son_[SIZE_OF_VALUE] = other.son_[SIZE_OF_BLOCK];
     }
 
     Node& operator=(Node &other) {
@@ -180,6 +202,8 @@ private:
   std::string filename_; // Store the filename (No use in pre-homework, might help in Ticket System)
   size_t root_position_;
 
+  LruCache<Node, 10007, int(5e7 + 1)> cache;
+
   Node *root_; // Store the root Node (Might be frequently read and modify, thus put in memory)
 
   std::fstream file_;
@@ -192,11 +216,35 @@ private:
     return tmp;
   }
 
+  inline size_t read(Node *data, size_t position, std::ios_base::seekdir mode = std::ios::beg) {
+    Node *cache_data = cache.Find(position);
+    if (cache_data != nullptr) {
+      data = cache_data;
+      return position;
+    }
+    file_.seekg(position, mode);
+    size_t tmp = size_t(file_.tellg());
+    file_.read(reinterpret_cast<char *>(data), sizeof(*data));
+    cache.Insert(position, data);
+    return tmp;
+  }
+
   template <class Type>
   inline size_t write(Type *data, size_t position, std::ios_base::seekdir mode = std::ios::beg) { // Simple write funtion
     file_.seekp(position, mode);
     size_t tmp = size_t(file_.tellp());
     file_.write(reinterpret_cast<char *>(data), sizeof(*data));
+    return tmp;
+  }
+
+  inline size_t write(Node *data, size_t position, std::ios_base::seekdir mode = std::ios::beg) { // Simple write funtion
+    if (mode != std::ios::end && cache.Find(position) != nullptr) {
+      return position;
+    }
+    file_.seekp(position, mode);
+    size_t tmp = size_t(file_.tellp());
+    file_.write(reinterpret_cast<char *>(data), sizeof(*data));
+    cache.Insert(position, data);
     return tmp;
   }
   
@@ -205,6 +253,19 @@ private:
     file_.seekg(position, mode);
     size_t tmp = size_t(file_.tellg());
     file_.read(reinterpret_cast<char *>(&data), sizeof(data));
+    return tmp;
+  }
+
+  inline size_t read(Node &data, size_t position, std::ios_base::seekdir mode = std::ios::beg) { // Simple read funtion(to simplify my code)
+    Node *cache_data = cache.Find(position);
+    if (cache_data != nullptr) {
+      data = *cache_data;
+      return position;
+    }
+    file_.seekg(position, mode);
+    size_t tmp = size_t(file_.tellg());
+    file_.read(reinterpret_cast<char *>(&data), sizeof(data));
+    cache.Insert(position, new Node(data));
     return tmp;
   }
 
@@ -533,6 +594,7 @@ public:
 
   BpTree(std::string filename = "bpdata") {
     filename_ = filename;
+    cache.set_filepath(filename_);
     if (std::ifstream(filename_).good()) {
       file_.open(filename_, std::ios::in | std::ios::out | std::ios::binary);
       read(root_position_, 0);
@@ -602,7 +664,7 @@ public:
       throw new NothingFind();
     }
   }
-
+  
 };
 
 #endif //BP_TREE_HPP
