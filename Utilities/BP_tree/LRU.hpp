@@ -2,11 +2,13 @@
 #define LRU_HPP
 
 #include <cstddef>
+#include <cstdio>
 #include <fstream>
 #include <iostream>
-#include <cstdio>
-#include <string>
 #include <list>
+#include <string>
+
+extern std::fstream file_;
 
 template <class ValueType, size_t appoint_hash_size, size_t cache_size>
 class LruCache {
@@ -27,15 +29,12 @@ private:
       data_ = data;
     }
 
-    ~ListNode() {
-      delete data_;
-    }
+    ~ListNode() { delete data_; }
   };
-  
 
-  std::list<ListNode*> datalist_;
+  std::list<ListNode *> datalist_;
 
-  std::list<typename std::list<ListNode*>::iterator> hashmap_[MOD];
+  std::list<typename std::list<ListNode *>::iterator> hashmap_[MOD];
 
   std::hash<int> hashfunction_;
 
@@ -43,14 +42,20 @@ private:
 
   int appoint_hash_size_, cache_size_;
 
-  std::fstream file_;
+  static const size_t MAX =
+      (cache_size - sizeof(size_counter_) - sizeof(hashfunction_) -
+       sizeof(hashmap_)) /
+          (sizeof(ListNode *) +
+           sizeof(typename std::list<ListNode *>::iterator) + sizeof(ListNode) +
+           sizeof(ValueType)) -
+      2;
 
-  static const size_t MAX = (cache_size - sizeof(size_counter_) - sizeof(hashfunction_) - sizeof(hashmap_)) / (sizeof(ListNode*) + sizeof(typename std::list<ListNode*>::iterator)) - 2;
-
-  void Move_To_The_Top(typename std::list<ListNode*>::iterator it) {
-    datalist_.insert(datalist_.begin(), *it);
+  void Move_To_The_Top(typename std::list<ListNode *>::iterator it) {
+    ListNode *tmp = *it;
 
     datalist_.erase(it);
+
+    datalist_.insert(datalist_.begin(), tmp);
   }
 
   void RemoveBack() {
@@ -67,12 +72,12 @@ private:
     }
 
     file_.seekp(node->index_, std::ios::beg);
-
-    file_.write(reinterpret_cast<char*>(node->data_), sizeof(ValueType));
+    file_.write(reinterpret_cast<char *>(node->data_), sizeof(ValueType));
 
     hashmap_[key].erase(p);
 
-    auto it = datalist_.end(); --it;
+    auto it = datalist_.end();
+    --it;
 
     datalist_.erase(it);
 
@@ -90,7 +95,7 @@ public:
       auto it = datalist_.begin();
 
       file_.seekp((*it)->index_, std::ios::beg);
-      file_.write(reinterpret_cast<char*>((*it)->data_), sizeof(ValueType));
+      file_.write(reinterpret_cast<char *>((*it)->data_), sizeof(ValueType));
       delete (*it);
 
       datalist_.erase(it);
@@ -98,7 +103,7 @@ public:
     file_.close();
   };
 
-  void Insert(int index, ValueType* data) {
+  void Insert(int index, ValueType *data) {
     if (size_counter_ == MAX) {
       RemoveBack();
       size_counter_--;
@@ -113,21 +118,19 @@ public:
     hashmap_[key].insert(hashmap_[key].end(), it);
   }
 
-  ValueType* Find(int index) {
+  ValueType *Find(int index) {
     int key = hashfunction_(index) % MOD;
 
     for (auto it = hashmap_[key].begin(); it != hashmap_[key].end(); it++) {
-      if ((*(*it))->index_ == index) {
+      ListNode *tmp = *(*it);
+      if (tmp->index_ == index) {
         Move_To_The_Top(*it);
-        return (*(*it))->data_;
+        *it = datalist_.begin();
+        return tmp->data_;
       }
     }
     return nullptr;
   }
-
-  void set_filepath(std::string filename) {
-    file_.open(filename);
-  }
 };
 
-#endif //LRU_HPP
+#endif // LRU_HPP

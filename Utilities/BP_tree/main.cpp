@@ -1,47 +1,41 @@
+#include "Exceptions.hpp"
+#include "LRU.hpp"
+#include "bp_tree.hpp"
 #include <algorithm>
-#include <cstring>
-#include <iostream>
 #include <cstdio>
 #include <cstdlib>
-#include <string>
-#include "Exceptions.hpp"
-#include "bp_tree.hpp"
-#include <utility>
+#include <cstring>
+#include <iostream>
 #include <map>
+#include <string>
+#include <utility>
 #include <vector>
-#include "LinkLists.hpp"
+
+std::fstream file_;
 
 struct Index {
   char c[65] = {'\0'};
 
   Index() {}
 
-  bool operator<(const Index &rhs) const {
-    return (std::strcmp(c, rhs.c) < 0);
-  }
+  bool operator<(const Index &rhs) const { return (std::strcmp(c, rhs.c) < 0); }
 
-  bool operator==(const Index &rhs) const {
-    return !(std::strcmp(c, rhs.c));
-  }
+  bool operator==(const Index &rhs) const { return !(std::strcmp(c, rhs.c)); }
 };
 
-void init_seed() {
-  srand(123);
-}
+void init_seed() { srand(123); }
 
-int get_random() {
-  return rand();
-}
+int get_random() { return rand(); }
 
 void random_string_generator(Index &tmp) {
-  for (int i = 0 ; i < get_random() % 64 + 1; i++) {
+  for (int i = 0; i < get_random() % 64 + 1; i++) {
     tmp.c[i] = 'a' + get_random() % 26;
   }
   return;
 }
 
 int main() {
-  const char *file_path1 = "test1";
+  // const char *file_path1 = "test1";
   // const char *file_path2 = "test2";
   // const char *file_path3 = "test3";
 
@@ -49,7 +43,7 @@ int main() {
   // remove(file_path2);
   // remove(file_path3);
 
-  BpTree<Index, int> test1("test1");
+  // BpTree<Index, int> test1("test1");
 
   // BpTree<int, int, 5> test2("test2");
 
@@ -57,49 +51,49 @@ int main() {
 
   // test1
 
-  int n;
+  // int n;
 
-  std::cin >> n;
+  // std::cin >> n;
 
-  for (int i = 1; i <= n; i++) {
-    std::string command;
+  // for (int i = 1; i <= n; i++) {
+  //   std::string command;
 
-    std::cin >> command;
+  //   std::cin >> command;
 
-    if (command == "insert") {
-      Index index;
-      int data;
+  //   if (command == "insert") {
+  //     Index index;
+  //     int data;
 
-      std::cin >> index.c >> data;
+  //     std::cin >> index.c >> data;
 
-      test1.Insert(index, data);
-    } else if (command == "delete") {
-      Index index;
-      int data;
+  //     test1.Insert(index, data);
+  //   } else if (command == "delete") {
+  //     Index index;
+  //     int data;
 
-      std::cin >> index.c >> data;
-      try {
-        test1.Delete(index, data);
-      } catch (Exception *error) {
-        delete error;
-      }
-    } else {
-      Index index;
+  //     std::cin >> index.c >> data;
+  //     try {
+  //       test1.Delete(index, data);
+  //     } catch (Exception *error) {
+  //       delete error;
+  //     }
+  //   } else {
+  //     Index index;
 
-      std::cin >> index.c;
-      try {
-        test1.Find(index);
-        std::cout << std::endl;
-      } catch (Exception *error) {
-        error->what();
-        delete error;
-      }
-    }
-  }
+  //     std::cin >> index.c;
+  //     try {
+  //       test1.Find(index);
+  //       std::cout << std::endl;
+  //     } catch (Exception *error) {
+  //       error->what();
+  //       delete error;
+  //     }
+  //   }
+  // }
 
   // fclose(stdout);
 
-  //test2
+  // test2
 
   // std::vector<std::pair<Index, int>> number;
   // std::map<Index, int> memory;
@@ -195,7 +189,8 @@ int main() {
   //         test3.Delete(number.back().first, number.back().second);
   //         memory.erase(memory.find(number.back().first));
   //       } catch (Exception *error) {
-  //         if (memory.erase(memory.find(number.back().first)) != memory.end()) {
+  //         if (memory.erase(memory.find(number.back().first)) != memory.end())
+  //         {
   //           std::cout << "Fail";
   //           getchar();
   //         }
@@ -220,7 +215,6 @@ int main() {
   //   }
   //   number.pop_back();
   // }
-
 
   // test3
 
@@ -286,31 +280,31 @@ int main() {
 
   // test4
 
-  // const char* file_path4 = "test4";
+  const char *file_path4 = "test4";
 
-  // remove(file_path4);
+  remove(file_path4);
 
-  // BpTree<Index, int> *test4 = new BpTree<Index, int>("test4");
+  BpTree<Index, int> *test4 = new BpTree<Index, int>("test4");
 
-  // Index test_index;
-  // std::strcpy(test_index.c, "okay");
+  Index test_index;
+  std::strcpy(test_index.c, "okay");
 
-  // for (int i = 1; i <= 3025; i++) {
-  //   test4->Insert(test_index, i);
-  // }
-  // test4->Find(test_index);
+  for (int i = 1; i <= 3025; i++) {
+    test4->Insert(test_index, i);
+  }
+  test4->Find(test_index);
 
-  // test4->Delete(test_index, 10);
+  test4->Delete(test_index, 10);
 
-  // test4->Find(test_index);
+  test4->Find(test_index);
 
-  // test4->Insert(test_index, 10);
+  test4->Insert(test_index, 10);
 
-  // delete test4;
+  delete test4;
 
-  // test4 = new BpTree<Index, int>("test4");
+  test4 = new BpTree<Index, int>("test4");
 
-  // test4->Find(test_index);
+  test4->Find(test_index);
 
   // test5
 

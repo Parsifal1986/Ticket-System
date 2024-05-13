@@ -1,10 +1,9 @@
 #ifndef EXCEPTIONS_HPP
 #define EXCEPTIONS_HPP
 
-#include <exception>
 #include <iostream>
 
-class Exception : public std::exception {
+class Exception {
 public:
   Exception() {}
 
@@ -19,9 +18,7 @@ public:
 
   ~IllegalInsert() {}
 
-  void what() override {
-    std::cout << "Insert Fail!" << std::endl;
-  }
+  void what() override { std::cout << "Insert Fail!" << std::endl; }
 };
 
 class IllegalDelete : public Exception {
@@ -30,9 +27,7 @@ public:
 
   ~IllegalDelete() {}
 
-  void what() override {
-    std::cout << "Delete Fail!" << std::endl;
-  }
+  void what() override { std::cout << "Delete Fail!" << std::endl; }
 };
 
 class NothingFind : public Exception {
@@ -41,9 +36,7 @@ public:
 
   ~NothingFind() {}
 
-  void what() override {
-    std::cout << "null" << std::endl;
-  }
+  void what() override { std::cout << "null" << std::endl; }
 };
 
 #endif // EXCEPTIONS_HPP
