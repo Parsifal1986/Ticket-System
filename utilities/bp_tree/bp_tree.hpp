@@ -1,8 +1,8 @@
 #ifndef BP_TREE_HPP
 #define BP_TREE_HPP
 
-#include "../Exceptions/Exceptions.hpp"
-#include "../Vector/vector.hpp"
+#include "../exceptions/exceptions.hpp"
+#include "../vector/vector.hpp"
 #include "LRU.hpp"
 #include <cmath>
 #include <cstdio>

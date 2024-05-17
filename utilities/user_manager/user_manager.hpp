@@ -1,11 +1,11 @@
-#ifndef USERMANAGER_HPP
-#define USERMANAGER_HPP
+#ifndef USER_MANAGER_HPP
+#define USER_MANAGER_HPP
 
-#include "../Exceptions/Exceptions.hpp"
-#include "../Exceptions/exceptions.hpp"
-#include "../BP_tree/bp_tree.hpp"
-#include "../Map/map.hpp"
-#include "../Vector/vector.hpp"
+#include "../exceptions/exceptions.hpp"
+#include "../exceptions/exceptions.hpp"
+#include "../bp_tree/bp_tree.hpp"
+#include "../map/map.hpp"
+#include "../vector/vector.hpp"
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -113,4 +113,4 @@ private:
   sjtu::map<UserName, UserData> online_user_;
 };
 
-#endif // USERMANAGER_HPP
+#endif // USER_MANAGER_HPP

@@ -1,10 +1,8 @@
 #ifndef LRU_HPP
 #define LRU_HPP
 
-#include <cstddef>
 #include <cstdio>
 #include <fstream>
-#include <ios>
 #include <iostream>
 #include <list>
 #include <string>

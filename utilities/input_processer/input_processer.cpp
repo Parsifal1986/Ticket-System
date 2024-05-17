@@ -1,4 +1,4 @@
-#include "InputProcesser.hpp"
+#include "input_processer.hpp"
 #include <string>
 
 void Tokenscanner::SetLine(const std::string &line) {

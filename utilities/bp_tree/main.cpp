@@ -1,14 +1,11 @@
-#include "../Exceptions/Exceptions.hpp"
+#include "../exceptions/exceptions.hpp"
 #include "LRU.hpp"
 #include "bp_tree.hpp"
 #include <cstdio>
-#include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <map>
 #include <string>
-#include <utility>
-#include <vector>
 
 std::fstream file_;
 

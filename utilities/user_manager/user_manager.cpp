@@ -1,6 +1,4 @@
-#include "UserManager.hpp"
-#include <cstring>
-#include <map>
+#include "user_manager.hpp"
 
 UserData UserDatabase::FindUser(UserName username) {
   sjtu::vector<UserData> *ret;
