@@ -1,7 +1,6 @@
-#include "Exceptions.hpp"
+#include "../Exceptions/Exceptions.hpp"
 #include "LRU.hpp"
 #include "bp_tree.hpp"
-#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -281,22 +280,39 @@ int main() {
   // test4
 
   const char *file_path4 = "test4";
+  const char *file_path4_root = "test4_rootinfo";
 
   remove(file_path4);
+  remove(file_path4_root);
 
   BpTree<Index, int> *test4 = new BpTree<Index, int>("test4");
 
   Index test_index;
   std::strcpy(test_index.c, "okay");
+  sjtu::vector<int> *ans;
 
   for (int i = 1; i <= 3025; i++) {
     test4->Insert(test_index, i);
   }
-  test4->Find(test_index);
+  ans = test4->Find(test_index);
+
+  while (!ans->empty()) {
+    std::cout << ans->at(0) << " ";
+    ans->erase(ans->begin());
+  }
+
+  delete ans;
 
   test4->Delete(test_index, 10);
 
-  test4->Find(test_index);
+  ans = test4->Find(test_index);
+
+  while (!ans->empty()) {
+    std::cout << ans->at(0) << " ";
+    ans->erase(ans->begin());
+  }
+
+  delete ans;
 
   test4->Insert(test_index, 10);
 
@@ -304,8 +320,13 @@ int main() {
 
   test4 = new BpTree<Index, int>("test4");
 
-  test4->Find(test_index);
+  ans = test4->Find(test_index);
 
+  while (!ans->empty()) {
+    std::cout << ans->at(0) << " ";
+    ans->erase(ans->begin());
+  }
+  delete ans;
   // test5
 
   // const char *file_path5 = "test5";

@@ -4,15 +4,16 @@
 #include <cstddef>
 #include <cstdio>
 #include <fstream>
+#include <ios>
 #include <iostream>
 #include <list>
 #include <string>
 
-extern std::fstream file_;
+// extern std::fstream file_;
 
 template <class ValueType, size_t appoint_hash_size, size_t cache_size>
 class LruCache {
-  static const size_t MOD = appoint_hash_size;
+  static const size_t kMod = appoint_hash_size;
 
 private:
   struct ListNode {
@@ -34,7 +35,7 @@ private:
 
   std::list<ListNode *> datalist_;
 
-  std::list<typename std::list<ListNode *>::iterator> hashmap_[MOD];
+  std::list<typename std::list<ListNode *>::iterator> hashmap_[kMod];
 
   std::hash<int> hashfunction_;
 
@@ -42,7 +43,11 @@ private:
 
   int appoint_hash_size_, cache_size_;
 
-  static const size_t MAX =
+  std::string filename_;
+
+  std::fstream file_;
+
+  static const size_t kMax =
       (cache_size - sizeof(size_counter_) - sizeof(hashfunction_) -
        sizeof(hashmap_)) /
           (sizeof(ListNode *) +
@@ -61,7 +66,7 @@ private:
   void RemoveBack() {
     auto node = datalist_.back();
 
-    int key = hashfunction_(node->index_) % MOD;
+    int key = hashfunction_(node->index_) % kMod;
 
     auto p = hashmap_[key].begin();
 
@@ -84,6 +89,21 @@ private:
     delete node;
   }
 
+  void Insert(int index, ValueType *data) {
+    if (size_counter_ == kMax) {
+      RemoveBack();
+      size_counter_--;
+    }
+
+    size_counter_++;
+
+    int key = hashfunction_(index) % kMod;
+
+    auto it = datalist_.insert(datalist_.begin(), new ListNode(index, data));
+
+    hashmap_[key].insert(hashmap_[key].end(), it);
+  }
+
 public:
   LruCache() {
     appoint_hash_size_ = appoint_hash_size;
@@ -103,23 +123,8 @@ public:
     file_.close();
   };
 
-  void Insert(int index, ValueType *data) {
-    if (size_counter_ == MAX) {
-      RemoveBack();
-      size_counter_--;
-    }
-
-    size_counter_++;
-
-    int key = hashfunction_(index) % MOD;
-
-    auto it = datalist_.insert(datalist_.begin(), new ListNode(index, data));
-
-    hashmap_[key].insert(hashmap_[key].end(), it);
-  }
-
   ValueType *Find(int index) {
-    int key = hashfunction_(index) % MOD;
+    int key = hashfunction_(index) % kMod;
 
     for (auto it = hashmap_[key].begin(); it != hashmap_[key].end(); it++) {
       ListNode *tmp = *(*it);
@@ -130,6 +135,49 @@ public:
       }
     }
     return nullptr;
+  }
+
+  void OpenFile(std::string filename = "bpdata") {
+    filename_ = filename;
+    if (std::ifstream(filename_).good()) {
+      file_.open(filename_, std::ios::in | std::ios::out | std::ios::binary);
+    } else {
+      std::ofstream(filename_).close();
+      file_.open(filename_, std::ios::in | std::ios::out | std::ios::binary);
+    }
+  }
+
+  ValueType *Get(int index) {
+    ValueType* ret = Find(index);
+    if (ret != nullptr) {
+      return ret;
+    } else {
+      ValueType *data = new ValueType;
+      file_.seekg(index);
+      size_t tmp = size_t(file_.tellg());
+      file_.read(reinterpret_cast<char *>(data), sizeof(*data));
+      Insert(index, data);
+      return data;
+    }
+  }
+
+  int Throw(int index, ValueType* data, std::ios_base::seekdir mode) {
+    
+    if (mode == std::ios::end) {
+      file_.seekp(0, mode);
+      size_t tmp = size_t(file_.tellp());
+      file_.write(reinterpret_cast<char *>(data), sizeof(*data));
+      Insert(tmp, data);
+      return tmp;
+    } else {
+      if (Find(index) != nullptr) {
+        return index;
+      }
+      file_.seekp(index, mode);
+      file_.write(reinterpret_cast<char *>(data), sizeof(*data));
+      Insert(index, data);
+      return index;
+    }
   }
 };
 

@@ -9,7 +9,7 @@
 #include <functional>
 #include <new>
 #include "utility.hpp"
-#include "exceptions.hpp"
+#include "../Exceptions/exceptions.hpp"
 
 #define COLOR(p) (p == nullptr ? BLACK : p->color)
 #define OUTWARD(p) (p->father->left_child == p ? p->left_child : p->right_child)

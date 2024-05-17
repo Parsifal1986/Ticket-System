@@ -10,4 +10,4 @@ Descrpition page <https://github.com/ACMClassCourse-2023/Ticket-System-2024>
 
 - [ ] Finish manage system
 
-- [ ] bonus(LRU)
+- [x] bonus(LRU)
