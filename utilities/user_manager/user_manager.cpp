@@ -1,5 +1,7 @@
 #include "user_manager.hpp"
 
+UserDatabase::UserDatabase() : user_database_("UserData") {}
+
 UserData UserDatabase::FindUser(UserName username) {
   sjtu::vector<UserData> *ret;
 

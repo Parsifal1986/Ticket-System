@@ -1,5 +1,4 @@
 #include "input_processer.hpp"
-#include <string>
 
 void Tokenscanner::SetLine(const std::string &line) {
   line_ = line;
@@ -90,6 +89,9 @@ ParameterType TokenProcesser::CheckParameter(std::string token, EnumType enum_ty
       }
       case 'y' : {
         return TYPE;
+      }
+      case 'q' : {
+        return OPTION;
       }
       default: {
         return UNDEFINED_PARAMETER;

@@ -10,7 +10,6 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-#include <sys/types.h>
 
 // extern std::fstream file_;
 
@@ -44,9 +43,15 @@ private:
       return (key_ == rhs.key_) ? value_ < rhs.value_ : key_ < rhs.key_;
     }
 
-    void operator=(ValueType &rhs) {
-      key_ = rhs.key_;
-      value_ = rhs.value_;
+    ValueType operator=(ValueType &other) {
+      if (this == &other) {
+        return *this;
+      }
+      
+      key_ = other.key_;
+      value_ = other.value_;
+
+      return *this;
     }
 
     bool operator==(ValueType &other) {

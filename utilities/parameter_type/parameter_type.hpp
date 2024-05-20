@@ -20,7 +20,8 @@ enum ParameterType {
   TYPE,
   HELP,
   UNDEFINED_PARAMETER,
-  NOT_A_PARAMETER
+  NOT_A_PARAMETER,
+  OPTION
 };
 
 enum EnumType {

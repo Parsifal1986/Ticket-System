@@ -41,17 +41,26 @@ public:
   void what() override { std::cout << "null" << std::endl; }
 };
 
-class UserManagerException : public Exception {
-
-};
+class UserManagerException : public Exception {};
 
 class NoSuchUser : public UserManagerException {
 public:
-  NoSuchUser() {};
+  NoSuchUser() {}
 
-  ~NoSuchUser() {};
+  ~NoSuchUser() {}
 
-  void what() override { std::cout << "The user you are looking for DO NOT exist!";};
+  void what() override { std::cout << "The user you are looking for DOES NOT exist!"; }
+};
+
+class TrainManagerException : public Exception {};
+
+class NoSuchTrain : public TrainManagerException {
+public:
+  NoSuchTrain() {};
+
+  ~NoSuchTrain() {}
+
+  void what() override { std::cout << "The train you are loooking for DOES NOT exist"; }
 };
 
 #endif // EXCEPTIONS_HPP

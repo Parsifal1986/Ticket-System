@@ -39,7 +39,15 @@ struct UserName {
 
   bool operator==(const UserName &rhs) const { return !(std::strcmp(username, rhs.username)); }
 
-  void operator=(const UserName &rhs) { std::strcpy(username, rhs.username); }
+  UserName& operator=(const UserName &other) {
+    if (this == &other) {
+      return *this;
+    }
+
+    std::strcpy(username, other.username);
+
+    return *this;
+  }
 };
 
 struct UserData {
@@ -89,6 +97,10 @@ struct UserData {
 
 class UserDatabase {
 public:
+  UserDatabase();
+
+  ~UserDatabase() = default;
+
   UserData FindUser(UserName username);
 
   UserData DeleteUser(UserName username);
@@ -98,7 +110,6 @@ public:
   void ModifyUser(UserName username, UserData modified_user_data);
 
 private:
-  std::fstream file_;
   BpTree<UserName, UserData> user_database_;
 };
 
