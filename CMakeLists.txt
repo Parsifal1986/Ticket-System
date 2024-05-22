@@ -11,6 +11,7 @@ set(SOURCE_FILES
   "${CMAKE_SOURCE_DIR}/utilities/train_manager/train_manager.cpp"
   "${CMAKE_SOURCE_DIR}/utilities/user_manager/user_manager.cpp"
   "${CMAKE_SOURCE_DIR}/utilities/selling_system/selling_system.cpp"
+  "${CMAKE_SOURCE_DIR}/utilities/log_system/log_system.cpp"
 )
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
