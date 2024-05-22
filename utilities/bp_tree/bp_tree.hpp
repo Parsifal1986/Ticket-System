@@ -372,7 +372,7 @@ private:
         // delete next_p;
       }
     }
-    if (p->value_[next_p_position] == value) {
+    if (p->value_[next_p_position] == value && next_p_position != p->last_position_) {
       throw new IllegalInsert();
     }
     for (int j = p->last_position_; j > next_p_position; j--) {
@@ -398,8 +398,7 @@ private:
   // There are lots of points that need concerning
   // p_relative_position stores the position of p in its
   Pair<bool, ValueType>
-  DeleteNode(ValueType value, Node *p_father, Node *p,
-             size_t p_relative_position) { // Delete a value from the B+ tree
+  DeleteNode(ValueType value, Node *p_father, Node *p, size_t p_relative_position) { // Delete a value from the B+ tree
     if (!p->is_leaf_) {
       // Node *next_p = new Node;
       Node *next_p;
@@ -666,7 +665,8 @@ public:
 
   ~BpTree() {
     // delete root_;
-    // file_.close();
+    write(root_position_, 0);
+    file_.close();
   }
 
   void Insert(Key key, Data data) { // A function for client to use
@@ -687,6 +687,12 @@ public:
     }
   }
 
+  bool Empty() {
+    Node *root;
+    read(root, root_position_);
+    return root->last_position_ == 0;
+  }
+
   sjtu::vector<Data>* Find(Key key) { // Find those value whose key equals to key that input by users
     // Node p = *root_;
     Node *p;
@@ -703,6 +709,7 @@ public:
       ++pos;
       if (pos == p->last_position_) {
         if (p->son_[p->last_position_] == -1) {
+          delete ret;
           throw new NothingFind();
         }
         Node *tmp;
@@ -726,6 +733,7 @@ public:
       }
     }
     if (!book) {
+      delete ret;
       throw new NothingFind();
     }
     return ret;
