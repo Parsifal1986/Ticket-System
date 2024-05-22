@@ -6,6 +6,8 @@
 #include <cstdio>
 #include <string>
 #include "../parameter_type/parameter_type.hpp"
+#include "../time_system/time_system.hpp"
+#include "../pair/pair.hpp"
 
 class TokenProcesser {
 public:
@@ -15,16 +17,26 @@ public:
 
   int StringToInt(std::string token);
 
+  void DevidedBySlash(std::string token, char array[][31]);
+
+  void DevidedBySlash(std::string token, int *array);
+  
+  Time ProcessTime(std::string token);
+
+  sjtu::pair<Time, Time> ProcessDate(std::string token);
+
+  int ReadTimeStamp(std::string token);
+
   ParameterType CheckParameter(std::string token, EnumType enum_type);
 };
 
-class Tokenscanner {
+class TokenScanner {
 public:
-  Tokenscanner() = default;
+  TokenScanner() = default;
 
-  Tokenscanner(const std::string &line) : line_(line) {}
+  TokenScanner(const std::string &line) : line_(line) {}
 
-  ~Tokenscanner() = default;
+  ~TokenScanner() = default;
 
   void SetLine(const std::string &line);
 
