@@ -52,15 +52,46 @@ public:
   void what() override { std::cout << "The user you are looking for DOES NOT exist!"; }
 };
 
+class PriviledgeIsNotEnough : public UserManagerException {
+public:
+  PriviledgeIsNotEnough() {}
+
+  ~PriviledgeIsNotEnough() {}
+
+  void what() override { std::cout << "The user's privilege is NOT ENOUGH!"; }
+};
+
 class TrainManagerException : public Exception {};
 
 class NoSuchTrain : public TrainManagerException {
 public:
-  NoSuchTrain() {};
+  NoSuchTrain() {}
 
   ~NoSuchTrain() {}
 
-  void what() override { std::cout << "The train you are loooking for DOES NOT exist"; }
+  void what() override { std::cout << "The train you are loooking for DOES NOT exist!"; }
+};
+
+class LogSystemException : public Exception {};
+
+class NoSuchLog : public LogSystemException {
+public:
+  NoSuchLog() {}
+
+  ~NoSuchLog() {}
+
+  void what() override { std::cout << "The user you are loooking for DOES NOT exist or didn't do anything yet!"; }
+};
+
+class OnlineSystemException : public Exception {};
+
+class UserIsNotOnline : public OnlineSystemException {
+public:
+  UserIsNotOnline() {}
+
+  ~UserIsNotOnline() {}
+
+  void what() override { std::cout << "The user is not online!"; }
 };
 
 #endif // EXCEPTIONS_HPP
