@@ -16,15 +16,23 @@ struct Time {
 
   Time& AddTime(int add_month, int add_day, int add_hour, int add_minute);
 
+  Time& AddTime_tmp(int add_month, int add_day, int add_hour, int add_minute);
+
+  Time& MinusTime(int minus_month, int minus_day, int minus_hour, int minus_minute);
+
   bool InOneDay(const Time &rhs);
 
   bool LessInDate(const Time &rhs);
 
-  bool operator<(const Time &other);
+  bool operator<(const Time &other) const;
 
-  bool operator==(const Time &other);
+  bool operator==(const Time &other) const;
 
-  bool operator<=(const Time &other);
+  bool operator<=(const Time &other) const;
+
+  Time& operator+(const Time &other) const;
+
+  Time &operator-(const Time &other) const;
 };
 
 #endif //TIMESYSTEM_HPP
