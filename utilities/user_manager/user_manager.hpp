@@ -9,7 +9,6 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
-#include <cwchar>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -95,33 +94,46 @@ struct UserData {
   bool operator==(const UserData &rhs) const { return username == rhs.username; } // The username is unique
 };
 
+class OnlineSystem;
+
 class UserDatabase {
+
+friend OnlineSystem;
+
 public:
   UserDatabase();
 
   ~UserDatabase() = default;
 
+  UserData QueryUser(UserName username, short privilege);
+
+  void AddUser(UserData user_data);
+
+  UserData ModifyUser(UserName username, UserData modified_user_data, short priviledge);
+
+  bool IsFirstUser();
+
+private:
   UserData FindUser(UserName username);
 
   UserData DeleteUser(UserName username);
 
-  void AddUser(UserData user_data);
-
-  void ModifyUser(UserName username, UserData modified_user_data);
-
-private:
   BpTree<UserName, UserData> user_database_;
 };
 
 class OnlineSystem {
 public:
-  bool login(UserName username, std::string password);
+  bool Login(UserName username, std::string password);
 
-  bool logout(UserName username);
+  bool Logout(UserName username);
 
   int GetPrivilege(UserName username);
+
+  bool CheckIfOnline(UserName username);
+
+  void UpdatePrivilege(UserName username, short privilege);
 private:
-  sjtu::map<UserName, UserData> online_user_;
+  sjtu::map<UserName, short> online_user_;
 };
 
 #endif // USER_MANAGER_HPP

@@ -6,6 +6,7 @@
 #include "../map/map.hpp"
 #include "../vector/vector.hpp"
 #include "../time_system/time_system.hpp"
+#include "../memory_river/memory_river.hpp"
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -126,12 +127,13 @@ public:
 
   TrainData* FindTrain(TrainID train_id);
 
-  TrainData* DeleteTrain(TrainID train_id);
+  void DeleteTrain(TrainID train_id);
 
-  void AddTrain(TrainData* train_data);
+  void AddTrain(TrainData& train_data);
 
 private:
-  BpTree<TrainID, TrainData, 20> train_database;
+  BpTree<TrainID, int> train_database_index_;
+  MemoryRiver<TrainData> train_database_;
 };
 
 #endif // TRAIN_MANAGER_HPP
