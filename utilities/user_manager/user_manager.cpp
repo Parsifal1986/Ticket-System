@@ -44,7 +44,7 @@ void UserDatabase::AddUser(UserData user_data) {
 UserData UserDatabase::ModifyUser(UserName username, UserData modified_user_data, short priviledge) {
   UserData old_user_data = FindUser(username);
 
-  if (old_user_data.privilege > priviledge) {
+  if (old_user_data.privilege >= priviledge) {
     throw new PriviledgeIsNotEnough();
   }
 

@@ -14,6 +14,8 @@
 #include <iostream>
 #include <string>
 
+extern int time_stamp;
+
 struct UserName {
   UserName() {
 
