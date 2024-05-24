@@ -19,6 +19,6 @@ set(SOURCE_FILES
   "${CMAKE_SOURCE_DIR}/utilities/log_system/log_system.cpp"
 )
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 add_executable(code main.cpp ${SOURCE_FILES})
