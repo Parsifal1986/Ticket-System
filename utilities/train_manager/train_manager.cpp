@@ -1,6 +1,6 @@
 #include "train_manager.hpp"
 
-TrainDatabase::TrainDatabase() : train_database_index_("train_data") {}
+TrainDatabase::TrainDatabase() : train_database_index_("train_data_index"), train_database_("train_data") {}
 
 TrainData* TrainDatabase::FindTrain(TrainID train_id) {
   sjtu::vector<int> *ret;
@@ -28,14 +28,19 @@ void TrainDatabase::DeleteTrain(TrainID train_id) {
     throw new NoSuchTrain();
   }
 
-  train_database_.Delete(ret->at(0));
   train_database_index_.Delete(train_id, ret->at(0));
   delete ret;
   return;
 }
 
 void TrainDatabase::AddTrain(TrainData& train_data) {
-  int index = train_database_.write(train_data);
-  train_database_index_.Insert(train_data.train_id, index);
+  try {
+    train_database_index_.Find(train_data.train_id);
+    throw new TrainExist();
+  } catch (NothingFind *error) {
+    delete error;
+    int index = train_database_.write(train_data);
+    train_database_index_.Insert(train_data.train_id, index);
+  }
   return;
 }

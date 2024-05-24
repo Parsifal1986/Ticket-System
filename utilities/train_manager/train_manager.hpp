@@ -50,9 +50,9 @@ struct TrainID {
 
 struct TrainData {
   TrainID train_id;
-  char type, place[100][31] = {0};
-  short station_num, travel_time[99], stopover_time[99]; // 前缀和
-  int seat_num, price[100] = {0};
+  char type, place[100][31] = {'\0'};
+  short station_num; // 前缀和
+  int seat_num, price[100] = {0}, travel_time[100] = {0}, stopover_time[100] = {0};
   Time start_time, start_sale_date, end_sale_date;
 
   TrainData() {
@@ -133,7 +133,7 @@ public:
 
 private:
   BpTree<TrainID, int> train_database_index_;
-  MemoryRiver<TrainData> train_database_;
+  MemoryRiver<TrainData, 0> train_database_;
 };
 
 #endif // TRAIN_MANAGER_HPP
