@@ -45,8 +45,8 @@ void TokenProcesser::DevidedBySlash(std::string token, char array[][31]) {
   return;
 }
 
-void TokenProcesser::DevidedBySlash(std::string token, int *array) {
-  int pos = 0, array_pos = 0;
+void TokenProcesser::DevidedBySlash(std::string token, int *array, int start_pos) {
+  int pos = 0, array_pos = start_pos;
   std::string array_number;
   while (pos < token.size()) {
     if (token[pos] == '-') {
@@ -105,6 +105,23 @@ sjtu::pair<Time, Time> TokenProcesser::ProcessDate(std::string token) {
   return ret;
 }
 
+Time TokenProcesser::ProcessSingleDate(std::string token) {
+  int pos = 0;
+  std::string number;
+  Time tmp_time;
+  while (pos < token.size()) {
+    if (token[pos] == '-') {
+      tmp_time.month = StringToInt(number);
+      pos++;
+      number.clear();
+    } else {
+      number.push_back(token[pos++]);
+    }
+  }
+  tmp_time.day = StringToInt(number);
+  return tmp_time;
+}
+
 int TokenProcesser::ReadTimeStamp(std::string token) {
   return stoi(token.substr(1, token.size() - 2));
 }
@@ -123,6 +140,8 @@ ParameterType TokenProcesser::CheckParameter(std::string token, EnumType enum_ty
           return PASSWORD;
         } else if (enum_type == TRAIN) {
           return PRICES;
+        } else if (enum_type == SELLING){
+          return OPTION;
         } else {
           return UNDEFINED_PARAMETER;
         }
@@ -132,6 +151,8 @@ ParameterType TokenProcesser::CheckParameter(std::string token, EnumType enum_ty
           return NAME;
         } else if (enum_type == TRAIN) {
           return STATION_NUM;
+        } else if (enum_type == SELLING) {
+          return NUMBER;
         } else {
           return UNDEFINED_PARAMETER;
         }
@@ -152,13 +173,23 @@ ParameterType TokenProcesser::CheckParameter(std::string token, EnumType enum_ty
         return TRAIN_ID;
       }
       case 's': {
-        return STATIONS;
+        if (enum_type == SELLING) {
+          return START_STATION;
+        } else if (enum_type == TRAIN) {
+          return STATIONS;
+        } else {
+          return UNDEFINED_PARAMETER;
+        }
       }
       case 'x' : {
         return START_TIME;
       }
       case 't' : {
-        return TRAVEL_TIME;
+        if (enum_type == TRAIN) {
+          return TRAVEL_TIME;
+        } else {
+          return END_STATION;
+        }
       }
       case 'o' : {
         return STOPOVER_TIME;
@@ -171,6 +202,9 @@ ParameterType TokenProcesser::CheckParameter(std::string token, EnumType enum_ty
       }
       case 'q' : {
         return OPTION;
+      }
+      case 'f' : {
+        return START_STATION;
       }
       default: {
         return UNDEFINED_PARAMETER;

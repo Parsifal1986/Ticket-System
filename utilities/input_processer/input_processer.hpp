@@ -19,11 +19,13 @@ public:
 
   void DevidedBySlash(std::string token, char array[][31]);
 
-  void DevidedBySlash(std::string token, int *array);
+  void DevidedBySlash(std::string token, int *array, int start_pos = 0);
   
   Time ProcessTime(std::string token);
 
   sjtu::pair<Time, Time> ProcessDate(std::string token);
+
+  Time ProcessSingleDate(std::string token);
 
   int ReadTimeStamp(std::string token);
 
