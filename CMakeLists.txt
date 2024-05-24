@@ -5,6 +5,11 @@ set(CMAKE_CXX_STANDARD 23)
 
 add_subdirectory(utilities/bp_tree)
 
+# set(SANITIZE_FLAGS "-fsanitize=address")
+
+# add_compile_options(${SANITIZE_FLAGS})
+# add_link_options(${SANITIZE_FLAGS})
+
 set(SOURCE_FILES
   "${CMAKE_SOURCE_DIR}/utilities/input_processer/input_processer.cpp"
   "${CMAKE_SOURCE_DIR}/utilities/time_system/time_system.cpp"
