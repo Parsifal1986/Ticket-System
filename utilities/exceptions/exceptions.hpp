@@ -72,6 +72,26 @@ public:
   void what() override { std::cout << "The train you are loooking for DOES NOT exist!"; }
 };
 
+class TrainExist : public TrainManagerException {
+public:
+  TrainExist() {}
+
+  ~TrainExist() {}
+
+  void what() override {
+    std::cout << "The train you are loooking for EXIST!";
+  }
+};
+
+class TrainHasReleased : public TrainManagerException {
+public:
+  TrainHasReleased() {}
+
+  ~TrainHasReleased() {}
+
+  void what() override { std::cout << "The train has released and you CANNNOT delete it!"; }
+};
+
 class LogSystemException : public Exception {};
 
 class NoSuchLog : public LogSystemException {
