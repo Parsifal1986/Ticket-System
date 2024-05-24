@@ -207,6 +207,14 @@ bool SellingSystem::RefundTicket(UserName username, int n) {
 
   if (log.status == PENDING) {
     log_system.Update(username, n, REFUNDED);
+    sjtu::vector<Candidate> *ret = candidate_list_.Find(TrainsOfDay{log.start_date, log.train_id});
+
+    for (int i = 0; i < ret->size(); i++) {
+      if (ret->at(i).user_name == username) {
+        candidate_list_.Delete(TrainsOfDay{log.start_date, log.train_id}, ret->at(i));
+        break;
+      }
+    }
     return true;
   }
 
