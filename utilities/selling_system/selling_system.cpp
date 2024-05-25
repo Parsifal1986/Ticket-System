@@ -10,27 +10,11 @@ std::ostream& operator<<(std::ostream& output, Ticket& object) {
   return output;
 }
 
-SellingSystem::SellingSystem() : train_info_of_places_("train_info_of_places_data"), candidate_list_("candidate_info"), memory_river_("release_train_index"), seat_info_("seat_information") {
-  int number;
-  memory_river_.get_info(number, 1);
-  sjtu::pair<TrainsOfDay, int> tmp;
-  for (int i = 1; i <= number; i++) {
-    memory_river_.read(tmp, sizeof(int) + sizeof(tmp) * (i - 1));
-    release_train_[tmp.first] = tmp.second;
-  }
+SellingSystem::SellingSystem() : release_train_("release_train_index"), train_info_of_places_("train_info_of_places_data"), candidate_list_("candidate_info"), seat_info_("seat_information") {
 }
 
 SellingSystem::~SellingSystem() {
-  memory_river_.initialise("release_train_index");
-  memory_river_.write_info(release_train_.size(), 1);
 
-  int cnt = 0;
-  while (!release_train_.empty()) {
-    auto it = release_train_.begin();
-    auto tmp = sjtu::pair<TrainsOfDay, int>(it->first, it->second);
-    memory_river_.write(tmp);
-    release_train_.erase(it);
-  }
 }
 
 void SellingSystem::ReleaseTrain(TrainID train_id) {
@@ -44,7 +28,7 @@ void SellingSystem::ReleaseTrain(TrainID train_id) {
   SoldSeat tmp(train_data->seat_num);
   for (Time i = train_data->start_sale_date; i <= train_data->end_sale_date; i.AddTime(0, 1, 0, 0)) {
     int index = seat_info_.write(tmp);
-    release_train_[TrainsOfDay{i, train_id}] = index;
+    release_train_.Insert(TrainsOfDay{i, train_id}, index);
   }
 
   for (int i = 0; i < train_data->station_num; i++) {
@@ -102,14 +86,17 @@ SellingSystem::QueryTicket(Time start_day, std::string start_place, std::string 
       original_start_day.AddTime(0, 1, 0, 0);
       original_start_time.AddTime(0, 1, 0, 0);
     }
-    auto it = release_train_.find(TrainsOfDay{original_start_day, ret1->at(i).train_id});
-    if (it == release_train_.end()) {
+    sjtu::vector<int>* it;
+    try {
+      it = release_train_.Find(TrainsOfDay{original_start_day, ret1->at(i).train_id});
+    } catch (Exception *error) {
+      delete error;
       delete train;
       ++i; ++j;
       continue;
     }
     SoldSeat sold_seat;
-    seat_info_.read(sold_seat, it->second);
+    seat_info_.read(sold_seat, it->at(0));
     int max_ticket_ = 0x7fffffff;
     for (int k = position + 1; k <= ret2->at(j).position; k++) {
       max_ticket_ = std::min(max_ticket_, train->seat_num - sold_seat.sold_seat[k - 1]);
@@ -117,6 +104,7 @@ SellingSystem::QueryTicket(Time start_day, std::string start_place, std::string 
     int total_spent_time_to_the_end_pos = train->travel_time[ret2->at(j).position] + train->stopover_time[ret2->at(j).position - 1];
     ret->push_back(Ticket(ret1->at(i).train_id, train->price[ret2->at(j).position] - train->price[position], original_start_time.AddTime_tmp(0, 0, 0, total_spent_time_to_the_start_pos), original_start_time.AddTime_tmp(0, 0, 0, total_spent_time_to_the_end_pos), max_ticket_, start_place, end_place));
     delete train;
+    delete it;
     ++i; ++j;
   }
 
@@ -134,15 +122,21 @@ SellingSystem::QueryTicket(Time start_day, std::string start_place, std::string 
 }
 
 bool SellingSystem::QueryRelease(TrainID train_id, Time day) {
-  if (release_train_.find(TrainsOfDay{day, train_id}) != release_train_.end()) {
+  try {
+    auto ret = release_train_.Find(TrainsOfDay{day, train_id});
+    delete ret;
     return true;
-  } else {
+  } catch (Exception *error) {
+    delete error;
     return false;
   }
 }
 
 void SellingSystem::QuerySeat(TrainID train_id, Time day, SoldSeat& sold_seat) {
-  seat_info_.read(sold_seat, release_train_[TrainsOfDay{day, train_id}]);
+  auto ret = release_train_.Find(TrainsOfDay{day, train_id});
+  int tmp = ret->at(0);
+  delete ret;
+  seat_info_.read(sold_seat, tmp);
   return;
 }
 
@@ -176,14 +170,17 @@ int SellingSystem::BuyTicket(UserName username, TrainID train_id, Time start_day
   original_start_day.MinusTime(0, spent_on_way.day, 0, 0);
   original_start_time = original_start_day + train->start_time;
 
-  auto it = release_train_.find(TrainsOfDay{original_start_day, train_id});
-  if (it == release_train_.end()) {
+  sjtu::vector<int> *it;
+  try {
+    it = release_train_.Find(TrainsOfDay{original_start_day, train_id});
+  } catch (Exception *error) {
+    delete error;
     delete train;
     return -1;
   }
 
   SoldSeat train_seat;
-  seat_info_.read(train_seat, it->second);
+  seat_info_.read(train_seat, it->at(0));
 
   for (int i = start_p + 1; i < train->station_num; i++) {
     if (train_seat.sold_seat[i - 1] + number > train->seat_num) {
@@ -197,6 +194,7 @@ int SellingSystem::BuyTicket(UserName username, TrainID train_id, Time start_day
 
   if (end_p == -1) {
     delete train;
+    delete it;
     return -1;
   }
 
@@ -207,9 +205,11 @@ int SellingSystem::BuyTicket(UserName username, TrainID train_id, Time start_day
       candidate_list_.Insert(TrainsOfDay{original_start_day, train_id}, Candidate{username, time_stamp, start_p, end_p, number});
       log_system.AddLog(username, train_id, start_place, end_place, original_start_time.AddTime_tmp(0, 0, 0, total_spent_time_to_the_start_pos), original_start_time.AddTime_tmp(0, 0, 0, total_spent_time_to_the_end_pos), original_start_day, train->price[end_p] - train->price[start_p], number, PENDING, start_p, end_p);
       delete train;
+      delete it;
       return -2;
     } else {
       delete train;
+      delete it;
       return -1;
     }
   }
@@ -217,10 +217,11 @@ int SellingSystem::BuyTicket(UserName username, TrainID train_id, Time start_day
   for (int i = start_p; i < end_p; i++) {
     train_seat.sold_seat[i] += number;
   }
-  seat_info_.update(train_seat, it->second);
+  seat_info_.update(train_seat, it->at(0));
   log_system.AddLog(username, train_id, start_place, end_place, original_start_time.AddTime_tmp(0, 0, 0, total_spent_time_to_the_start_pos), original_start_time.AddTime_tmp(0, 0, 0, total_spent_time_to_the_end_pos), original_start_day, train->price[end_p] - train->price[start_p], number, SUCCESS, start_p, end_p);
   int tmp = (train->price[end_p] - train->price[start_p]) * number;
   delete train;
+  delete it;
   return tmp;
 }
 
@@ -251,9 +252,10 @@ bool SellingSystem::RefundTicket(UserName username, int n) {
     return true;
   }
 
-  auto it = release_train_.find(TrainsOfDay{log.start_date, log.train_id});
+  sjtu::vector<int> *it;
+  it = release_train_.Find(TrainsOfDay{log.start_date, log.train_id});
   SoldSeat train_seat;
-  seat_info_.read(train_seat, it->second);
+  seat_info_.read(train_seat, it->at(0));
 
   for (int i = log.start_p; i < log.end_p; i++) {
     train_seat.sold_seat[i] -= log.number;
@@ -266,7 +268,8 @@ bool SellingSystem::RefundTicket(UserName username, int n) {
      ret = candidate_list_.Find(TrainsOfDay{log.start_date, log.train_id});
   } catch (Exception *error) {
     delete error;
-    seat_info_.update(train_seat, it->second);
+    seat_info_.update(train_seat, it->at(0));
+    delete it;
     return true;
   }
 
@@ -289,7 +292,8 @@ bool SellingSystem::RefundTicket(UserName username, int n) {
       log_system.Update(ret->at(i).user_name, ret->at(i).time_stamp_of_request, SUCCESS, true);
     }
   }
-  seat_info_.update(train_seat, it->second);
+  seat_info_.update(train_seat, it->at(0));
+  delete it;
   delete ret;
   return true;
 }
@@ -334,13 +338,16 @@ sjtu::pair<Ticket, Ticket>* SellingSystem::QueryTransfer(Time start_day, std::st
     spent_on_way.AddTime(0, 0, 0, total_spent_time_to_the_start_pos);
     original_start_day.MinusTime(0, spent_on_way.day, 0, 0);
     original_start_time = original_start_day + train->start_time;
-    auto it = release_train_.find(TrainsOfDay{original_start_day, start_train->at(i).train_id});
-    if (it == release_train_.end()) {
+    sjtu::vector<int> *it;
+    try {
+      it = release_train_.Find(TrainsOfDay{original_start_day, start_train->at(i).train_id});
+    } catch (Exception *error) {
+      delete error;
       delete train;
       continue;
     }
     SoldSeat sold_seat;
-    seat_info_.read(sold_seat, it->second);
+    seat_info_.read(sold_seat, it->at(0));
     int max_ticket_ = 0x7fffffff;
     for (int j = position + 1; j < train->station_num; j++) {
       max_ticket_ = std::min(max_ticket_, train->seat_num - sold_seat.sold_seat[j - 1]);
@@ -379,6 +386,7 @@ sjtu::pair<Ticket, Ticket>* SellingSystem::QueryTransfer(Time start_day, std::st
       delete transfer_train;
     }
     delete train;
+    delete it;
   }
   delete start_train;
   return ret;

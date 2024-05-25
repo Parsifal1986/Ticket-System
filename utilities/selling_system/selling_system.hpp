@@ -155,10 +155,9 @@ public:
   sjtu::pair<Ticket, Ticket>* QueryTransfer(Time start_day, std::string start_place, std::string end_place, bool type);
 
 private:
-  sjtu::map<TrainsOfDay, int, TrainsOfDay::Comp> release_train_;
+  BpTree<TrainsOfDay, int> release_train_;
   BpTree<Place, TrainInfo> train_info_of_places_;
   BpTree<TrainsOfDay, Candidate> candidate_list_;
-  MemoryRiver<sjtu::pair<TrainsOfDay, int>, 1> memory_river_;
   MemoryRiver<SoldSeat, 0> seat_info_;
 
   template<typename T, typename Compare>
