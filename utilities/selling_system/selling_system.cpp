@@ -63,10 +63,29 @@ SellingSystem::QueryTicket(Time start_day, std::string start_place, std::string 
     delete error;
     ret1 = new sjtu::vector<TrainInfo>;
   }
+  sjtu::vector<TrainInfo> *ret2;
+  try {
+    ret2 = train_info_of_places_.Find(Place(end_place.c_str()));
+  } catch (Exception *error) {
+    delete error;
+    ret2 = new sjtu::vector<TrainInfo>;
+  }
 
   sjtu::vector<Ticket> *ret = new sjtu::vector<Ticket>;
 
-  for (int i = 0; i < ret1->size(); i++) {
+  int i = 0, j = 0;
+  while (i < ret1->size() &&  j < ret2->size()) {
+    if (ret1->at(i).train_id < ret2->at(j).train_id) {
+      ++i;
+      continue;
+    } else if (ret2->at(j).train_id < ret1->at(i).train_id) {
+      ++j;
+      continue;
+    }
+    if (ret1->at(i).position >= ret2->at(j).position) {
+      ++i; ++j;
+      continue;
+    }
     TrainData *train = train_database.FindTrain(ret1->at(i).train_id);
     int position = ret1->at(i).position;
     int total_spent_time_to_the_start_pos = train->travel_time[position] + train->stopover_time[position];
@@ -86,20 +105,19 @@ SellingSystem::QueryTicket(Time start_day, std::string start_place, std::string 
     auto it = release_train_.find(TrainsOfDay{original_start_day, ret1->at(i).train_id});
     if (it == release_train_.end()) {
       delete train;
+      ++i; ++j;
       continue;
     }
     SoldSeat sold_seat;
     seat_info_.read(sold_seat, it->second);
     int max_ticket_ = 0x7fffffff;
-    for (int j = position + 1; j < train->station_num; j++) {
-      max_ticket_ = std::min(max_ticket_, train->seat_num - sold_seat.sold_seat[j - 1]);
-      if (std::strcmp(train->place[j], end_place.c_str()) == 0) {
-        int total_spent_time_to_the_end_pos = train->travel_time[j] + train->stopover_time[j - 1];
-        ret->push_back(Ticket(ret1->at(i).train_id, train->price[j] - train->price[position], original_start_time.AddTime_tmp(0, 0, 0, total_spent_time_to_the_start_pos), original_start_time.AddTime_tmp(0, 0, 0, total_spent_time_to_the_end_pos), max_ticket_, start_place, end_place));
-        break;
-      }
+    for (int k = position + 1; k <= ret2->at(j).position; k++) {
+      max_ticket_ = std::min(max_ticket_, train->seat_num - sold_seat.sold_seat[k - 1]);
     }
+    int total_spent_time_to_the_end_pos = train->travel_time[ret2->at(j).position] + train->stopover_time[ret2->at(j).position - 1];
+    ret->push_back(Ticket(ret1->at(i).train_id, train->price[ret2->at(j).position] - train->price[position], original_start_time.AddTime_tmp(0, 0, 0, total_spent_time_to_the_start_pos), original_start_time.AddTime_tmp(0, 0, 0, total_spent_time_to_the_end_pos), max_ticket_, start_place, end_place));
     delete train;
+    ++i; ++j;
   }
 
   if (type == 0 || type == 3) {
@@ -110,10 +128,8 @@ SellingSystem::QueryTicket(Time start_day, std::string start_place, std::string 
     QuickSort(*ret, 0, ret->size() - 1, [](const Ticket& lhs, const Ticket &rhs) { return lhs.end_time == rhs.end_time ? lhs.train_id < rhs.train_id : lhs.end_time < rhs.end_time; });
   }
 
-  // if (time_stamp == 575674 && ret->size()) {
-  //   std::cout << ret->at(0).price << std::endl;
-  // }
   delete ret1;
+  delete ret2;
   return ret;
 }
 
