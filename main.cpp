@@ -382,16 +382,16 @@ int main() {
         delete train;
         continue;
       }
-      int* soldseat = nullptr;
+      SoldSeat soldseat(-1);
       if (selling_system.QueryRelease(train_id, day)) {
-        soldseat = selling_system.QuerySeat(train_id, day); // can be optimized
+        selling_system.QuerySeat(train_id, day, soldseat); // can be optimized
       }
       std::cout << train->train_id.train_id << " " << train->type << std::endl;
       Time cur_time = day + train->start_time;
-      std::cout << train->place[0] << " " << "xx-xx xx:xx" << " -> " << cur_time << " " << train->price[0] << " " << (soldseat == nullptr ? train->seat_num : train->seat_num - soldseat[0]) << std::endl;
+      std::cout << train->place[0] << " " << "xx-xx xx:xx" << " -> " << cur_time << " " << train->price[0] << " " << (soldseat.all_seat == -1 ? train->seat_num : train->seat_num - soldseat.sold_seat[0]) << std::endl;
       for (int i = 1; i < train->station_num - 1; i++) {
         cur_time.AddTime(0, 0, 0, train->travel_time[i] - train->travel_time[i - 1]);
-        std::cout << train->place[i] << " " << cur_time << " -> " << cur_time.AddTime(0, 0, 0, train->stopover_time[i] - train->stopover_time[i - 1]) << " " << train->price[i] << " " << (soldseat == nullptr ? train->seat_num : train->seat_num - soldseat[i]) << std::endl;
+        std::cout << train->place[i] << " " << cur_time << " -> " << cur_time.AddTime(0, 0, 0, train->stopover_time[i] - train->stopover_time[i - 1]) << " " << train->price[i] << " " << (soldseat.all_seat == -1 ? train->seat_num : train->seat_num - soldseat.sold_seat[i]) << std::endl;
       }
       cur_time.AddTime(0, 0, 0, train->travel_time[train->station_num - 1] - train->travel_time[train->station_num - 2]);
       std::cout << train->place[train->station_num - 1] << " " << cur_time << " -> " << "xx-xx xx:xx"<< " " << train->price[train->station_num - 1] << " x"  << std::endl;

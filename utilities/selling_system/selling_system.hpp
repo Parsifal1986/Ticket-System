@@ -142,7 +142,7 @@ public:
 
   bool QueryRelease(TrainID train_id, Time day = Time());
 
-  int* QuerySeat(TrainID train_id, Time day);
+  void QuerySeat(TrainID train_id, Time day, SoldSeat& sold_seat);
 
   int BuyTicket(UserName username, TrainID train_id, Time start_day, std::string start_place, std::string end_place, int number, bool candidate);
 
@@ -155,10 +155,11 @@ public:
   sjtu::pair<Ticket, Ticket>* QueryTransfer(Time start_day, std::string start_place, std::string end_place, bool type);
 
 private:
-  sjtu::map<TrainsOfDay, SoldSeat, TrainsOfDay::Comp> release_train_;
+  sjtu::map<TrainsOfDay, int, TrainsOfDay::Comp> release_train_;
   BpTree<Place, TrainInfo> train_info_of_places_;
   BpTree<TrainsOfDay, Candidate> candidate_list_;
-  MemoryRiver<sjtu::pair<TrainsOfDay, SoldSeat>, 1> memory_river_;
+  MemoryRiver<sjtu::pair<TrainsOfDay, int>, 1> memory_river_;
+  MemoryRiver<SoldSeat, 0> seat_info_;
 
   template<typename T, typename Compare>
   void QuickSort(sjtu::vector<T>& arr, int left, int right, Compare comp) {
