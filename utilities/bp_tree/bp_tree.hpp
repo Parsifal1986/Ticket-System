@@ -208,7 +208,7 @@ private:
                          // help in Ticket System)
   size_t root_position_;
 
-  LruCache<Node, 20011, size_t(2.7e6 + 1)> cache;
+  LruCache<Node, 20011, size_t(2.5e6 + 1)> cache;
 
   std::fstream file_;
 
