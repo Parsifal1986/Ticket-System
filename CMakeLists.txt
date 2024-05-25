@@ -10,6 +10,8 @@ add_subdirectory(utilities/bp_tree)
 # add_compile_options(${SANITIZE_FLAGS})
 # add_link_options(${SANITIZE_FLAGS})
 
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
+
 set(SOURCE_FILES
   "${CMAKE_SOURCE_DIR}/utilities/input_processer/input_processer.cpp"
   "${CMAKE_SOURCE_DIR}/utilities/time_system/time_system.cpp"
