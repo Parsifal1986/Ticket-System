@@ -43,6 +43,7 @@ Log LogSystem::QueryLog(UserName username, int number) {
   sjtu::vector<Log> *ret = QueryLog(username);
 
   if (ret->size() < number) {
+    delete ret;
     throw new NoSuchLog;
   }
 
@@ -70,8 +71,10 @@ bool LogSystem::Update(UserName username, int time_stamp_, Status new_status, bo
       log_database.Delete(username, ret->at(i));
       ret->at(i).status = new_status;
       log_database.Insert(username, ret->at(i));
+      delete ret;
       return true;
     }
   }
+  delete ret;
   return false;
 }

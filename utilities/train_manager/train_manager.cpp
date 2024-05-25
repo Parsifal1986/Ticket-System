@@ -35,7 +35,8 @@ void TrainDatabase::DeleteTrain(TrainID train_id) {
 
 void TrainDatabase::AddTrain(TrainData& train_data) {
   try {
-    train_database_index_.Find(train_data.train_id);
+    auto ret = train_database_index_.Find(train_data.train_id);
+    delete ret;
     throw new TrainExist();
   } catch (NothingFind *error) {
     delete error;

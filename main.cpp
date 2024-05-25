@@ -379,6 +379,7 @@ int main() {
       }
       if (day < train->start_sale_date || train->end_sale_date < day) {
         std::cout << -1 << std::endl;
+        delete train;
         continue;
       }
       int* soldseat = nullptr;
